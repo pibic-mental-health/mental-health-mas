@@ -7,7 +7,7 @@ Este projeto, desenvolvido no âmbito do Programa de Iniciação Científica (PI
 A iniciativa surge como resposta à crescente demanda por serviços de saúde mental e às barreiras de acesso existentes, sejam elas financeiras, geográficas ou estruturais. O projeto alinha-se às áreas de Engenharia de Software, Computação Afetiva e Saúde Digital, e busca integrar o conhecimento acadêmico com as necessidades da comunidade externa.
 
 * **Título do Projeto:** Plataforma de Diagnóstico Psicológico e Auxílio Mental com Integração de Agente Inteligente Empático.
-* **Estudante Responsável:** Lucas Víctor Ferreira de Araújo.
+* **Estudante Responsável:** Lucas Víctor Ferreira de Araújo e Lucas de Oliveira Dias Marques Ferreira.
 * **Curso:** Engenharia de Software.
 * **Orientador:** Prof. Dr. Mauricio Serrano.
 
