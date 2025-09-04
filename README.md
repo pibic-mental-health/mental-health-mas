@@ -35,7 +35,7 @@ A plataforma será desenvolvida utilizando as seguintes ferramentas e tecnologia
 * **Banco de Dados:** Firebase.
 * **Agente Inteligente:** Modelos de linguagem treinados localmente e APIs baseadas em modelos de linguagem natural.
 
-## metodologia
+## Metodologia
 
 O desenvolvimento do projeto será dividido em cinco fases principais:
 
