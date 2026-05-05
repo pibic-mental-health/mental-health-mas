@@ -1,0 +1,26 @@
+[
+  {
+    "perfil": "ANSIEDADE",
+    "tipo": "meditacao",
+    "titulo": "Respiração para ansiedade",
+    "link": "https://www.youtube.com/watch?v=respirar"
+  },
+  {
+    "perfil": "ANSIEDADE",
+    "tipo": "musica",
+    "titulo": "Lo-fi relaxante",
+    "link": "https://youtube.com/lofi"
+  },
+  {
+    "perfil": "DEPRESSAO",
+    "tipo": "atividade",
+    "titulo": "Caminhada leve ao ar livre",
+    "link": ""
+  },
+  {
+    "perfil": "MISTO",
+    "tipo": "meditacao",
+    "titulo": "Meditação curta 5 minutos",
+    "link": "https://youtube.com/meditacao"
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "nome": "Dra. Ana Silva",
+    "especialidade": "ANSIEDADE",
+    "modalidade": "online",
+    "contato": "ana@psicologia.com"
+  },
+  {
+    "nome": "Dr. Carlos Souza",
+    "especialidade": "DEPRESSAO",
+    "modalidade": "presencial",
+    "contato": "carlos@psicologia.com"
+  },
+  {
+    "nome": "Dra. Juliana Lima",
+    "especialidade": "MISTO",
+    "modalidade": "online",
+    "contato": "juliana@psicologia.com"
+  }
+]

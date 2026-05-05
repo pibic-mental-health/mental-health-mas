@@ -1,0 +1,53 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>br.com.pibic</groupId>
+    <artifactId>mental-health-mas</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>jade</groupId>
+            <artifactId>jade</artifactId>
+            <version>4.6.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+
+                <configuration>
+                    <mainClass>jade.Boot</mainClass>
+                    <arguments>
+                        <argument>-gui</argument>
+                        <argument>
+                            agenteTriagem:br.com.pibic.agentes.AgenteTriagemFormulario;
+                            agenteConversacional:br.com.pibic.agentes.AgenteConversacional;
+                            agentePaciente:br.com.pibic.agentes.AgentePaciente;
+                            agenteMonitoramento:br.com.pibic.agentes.AgenteMonitoramento;
+                            agenteRelatorio:br.com.pibic.agentes.AgenteRelatorio;
+                            agenteSeguranca:br.com.pibic.agentes.AgenteSeguranca;
+                            agenteMemoria:br.com.pibic.agentes.AgenteMemoria;
+                            agenteConteudo:br.com.pibic.agentes.AgenteConteudo;
+                            agentePsicologo:br.com.pibic.agentes.AgentePsicologo
+                        </argument>
+                    </arguments>
+                </configuration>
+
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
