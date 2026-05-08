@@ -33,26 +33,60 @@ O objetivo principal do sistema é oferecer:
 # Arquitetura Geral do Sistema
 
 ```mermaid
-graph TD
-    A[Usuário] --> B[AgentePaciente]
+flowchart TD
+    A[Usuário acessa a plataforma] --> B[Formulário inicial]
 
-    B --> C[AgenteTriagemFormulario]
+    B --> C[AgentePaciente<br/>simula o usuário no protótipo]
+    C --> D[AgenteTriagemFormulario]
 
-    C --> D[AgenteMemoria]
+    D --> D1[Extrai nome]
+    D --> D2[Calcula score de ansiedade]
+    D --> D3[Calcula score de depressão]
+    D --> D4[Define perfil emocional<br/>ANSIEDADE / DEPRESSAO / MISTO / GERAL]
 
-    B --> E[AgenteConversacional]
+    D1 --> E[AgenteMemoria]
+    D4 --> E
 
-    E --> D
-    E --> F[AgenteSeguranca]
-    E --> G[ClienteNvidia IA]
-    E --> H[AgenteConteudo]
-    E --> I[AgentePsicologo]
+    D4 --> C
+    C --> F[AgenteConversacional]
 
-    E --> J[AgenteMonitoramento]
+    F --> E
+    F --> G[AgenteSeguranca]
 
-    J --> K[AgenteRelatorio]
+    G --> G1[Classifica risco<br/>BAIXO_RISCO / ATENCAO / RISCO]
+    G1 --> F
 
-    K --> D
+    F --> E
+    E --> E1[Retorna memória<br/>nome + perfil + risco + histórico]
+    E1 --> F
+
+    F --> H[ IA DeepSeek]
+    H --> F
+
+    F --> I[Resposta empática personalizada]
+
+    I --> J{Usuário quer conteúdo?}
+    J -->|Sim| K[AgenteConteudo]
+    K --> K1[Consulta conteudos.json]
+    K1 --> F
+
+    I --> L{IA sugere psicólogo?}
+    L -->|Sim| M{Usuário aceita indicação?}
+    M -->|Sim| N[AgentePsicologo]
+    N --> N1[Consulta psicologos.json]
+    N1 --> F
+
+    I --> O{Usuário aceita monitoramento?}
+    O -->|Sim| P[AgenteMonitoramento]
+
+    P --> P1[Coleta dados por 7 dias<br/>ansiedade, humor, energia, sono]
+    P1 --> Q[AgenteRelatorio]
+
+    Q --> Q1[Calcula médias semanais]
+    Q --> Q2[Gera relatório emocional]
+    Q2 --> E
+
+    Q2 --> R[Relatório semanal ao usuário]
 ```
 
 ---
