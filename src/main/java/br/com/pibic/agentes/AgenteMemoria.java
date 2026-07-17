@@ -12,8 +12,13 @@ public class AgenteMemoria extends Agent {
     private String nome = "";
     private String perfil = "";
     private String risco = "";
+    private String statusConteudo = "";
+    private String statusPsicologo = "";
+    private String statusLocalAtendimento = "";
+    private String statusMonitoramentoSimulado = "";
+    private String statusRelatorioSimulado = "";
 
-    private List<String> historico = new ArrayList<>();
+    private List<String> historico = new ArrayList<String>();
 
     @Override
     protected void setup() {
@@ -22,7 +27,6 @@ public class AgenteMemoria extends Agent {
         addBehaviour(new CyclicBehaviour() {
             @Override
             public void action() {
-
                 ACLMessage mensagem = receive();
 
                 if (mensagem != null) {
@@ -34,44 +38,75 @@ public class AgenteMemoria extends Agent {
                     String tipo = extrairValor(conteudo, "tipo");
                     String valor = extrairValor(conteudo, "valor");
 
-                    switch (tipo) {
-                        case "nome":
-                            nome = valor;
-                            System.out.println("[MEMORIA] Nome salvo: " + nome);
-                            break;
+                    if (tipo.equalsIgnoreCase("nome")) {
+                        nome = valor;
+                        System.out.println("[MEMORIA] Nome salvo: " + nome);
+                    }
 
-                        case "perfil":
-                            perfil = valor;
-                            System.out.println("[MEMORIA] Perfil salvo: " + perfil);
-                            break;
+                    else if (tipo.equalsIgnoreCase("perfil")) {
+                        perfil = valor;
+                        System.out.println("[MEMORIA] Perfil salvo: " + perfil);
+                    }
 
-                        case "mensagem":
-                            historico.add("Usuario: " + valor);
-                            System.out.println("[MEMORIA] Mensagem armazenada");
-                            break;
+                    else if (tipo.equalsIgnoreCase("risco")) {
+                        risco = valor;
+                        System.out.println("[MEMORIA] Risco salvo: " + risco);
+                    }
 
-                        case "resposta":
-                            historico.add("IA: " + valor);
-                            System.out.println("[MEMORIA] Resposta armazenada");
-                            break;
+                    else if (tipo.equalsIgnoreCase("mensagem")) {
+                        historico.add("Usuario: " + valor);
+                        System.out.println("[MEMORIA] Mensagem armazenada");
+                    }
 
-                        case "risco":
-                            risco = valor;
-                            System.out.println("[MEMORIA] Risco salvo: " + risco);
-                            break;
+                    else if (tipo.equalsIgnoreCase("resposta")) {
+                        historico.add("IA: " + valor);
+                        System.out.println("[MEMORIA] Resposta armazenada");
+                    }
 
-                        case "monitoramento":
-                            historico.add("Monitoramento: " + valor);
-                            System.out.println("[MEMORIA] Monitoramento salvo: " + valor);
-                            break;
+                    else if (tipo.equalsIgnoreCase("conteudo")) {
+                        statusConteudo = valor;
+                        System.out.println("[MEMORIA] Preferencia de conteudo salva: " + statusConteudo);
+                    }
 
-                        case "consulta":
-                            responderConsulta(mensagem);
-                            break;
+                    else if (tipo.equalsIgnoreCase("psicologo")) {
+                        statusPsicologo = valor;
+                        System.out.println("[MEMORIA] Preferencia de psicologo salva: " + statusPsicologo);
+                    }
 
-                        default:
-                            System.out.println("[MEMORIA] Tipo nao reconhecido: " + tipo);
-                            break;
+                    else if (tipo.equalsIgnoreCase("local_atendimento")) {
+                        statusLocalAtendimento = valor;
+                        System.out.println("[MEMORIA] Preferencia de locais de atendimento salva: " + statusLocalAtendimento);
+                    }
+
+                    else if (tipo.equalsIgnoreCase("monitoramento")) {
+                        statusMonitoramentoSimulado = valor;
+                        System.out.println("[MEMORIA] Monitoramento salvo: " + statusMonitoramentoSimulado);
+                    }
+
+                    else if (tipo.equalsIgnoreCase("monitoramento_simulado")) {
+                        statusMonitoramentoSimulado = valor;
+                        System.out.println("[MEMORIA] Simulacao de monitoramento salva: " + statusMonitoramentoSimulado);
+                    }
+
+                    else if (tipo.equalsIgnoreCase("relatorio_simulado")) {
+                        statusRelatorioSimulado = valor;
+                        System.out.println("[MEMORIA] Relatorio simulado salvo: " + statusRelatorioSimulado);
+                    }
+
+                    else if (tipo.equalsIgnoreCase("consulta")) {
+                        String resumo = gerarResumo();
+
+                        ACLMessage resposta = mensagem.createReply();
+                        resposta.setPerformative(ACLMessage.INFORM);
+                        resposta.setContent(resumo);
+                        send(resposta);
+
+                        System.out.println("[MEMORIA] Resumo enviado ao solicitante:");
+                        System.out.println(resumo);
+                    }
+
+                    else {
+                        System.out.println("[MEMORIA] Tipo nao reconhecido: " + tipo);
                     }
 
                 } else {
@@ -81,44 +116,44 @@ public class AgenteMemoria extends Agent {
         });
     }
 
-    private void responderConsulta(ACLMessage mensagem) {
-        String resumo = gerarResumo();
-
-        System.out.println("[MEMORIA] Resumo enviado ao solicitante:");
-        System.out.println(resumo);
-
-        ACLMessage reply = mensagem.createReply();
-        reply.setPerformative(ACLMessage.INFORM);
-        reply.setContent(resumo);
-
-        send(reply);
-    }
-
     private String gerarResumo() {
         StringBuilder resumo = new StringBuilder();
 
-        resumo.append("Nome: ").append(valorOuNaoInformado(nome)).append("\n");
-        resumo.append("Perfil: ").append(valorOuNaoInformado(perfil)).append("\n");
-        resumo.append("Risco: ").append(valorOuNaoInformado(risco)).append("\n");
+        resumo.append("Nome: ").append(nome).append("\n");
+        resumo.append("Perfil: ").append(perfil).append("\n");
+        resumo.append("Risco: ").append(risco).append("\n");
+
+        if (!statusConteudo.isEmpty()) {
+            resumo.append("Conteudo: ").append(statusConteudo).append("\n");
+        }
+
+        if (!statusPsicologo.isEmpty()) {
+            resumo.append("Psicologo: ").append(statusPsicologo).append("\n");
+        }
+
+        if (!statusLocalAtendimento.isEmpty()) {
+            resumo.append("Locais de atendimento: ").append(statusLocalAtendimento).append("\n");
+        }
+
+        if (!statusMonitoramentoSimulado.isEmpty()) {
+            resumo.append("Monitoramento simulado: ").append(statusMonitoramentoSimulado).append("\n");
+        }
+
+        if (!statusRelatorioSimulado.isEmpty()) {
+            resumo.append("Relatorio simulado: ").append(statusRelatorioSimulado).append("\n");
+        }
+
         resumo.append("Historico:\n");
 
         if (historico.isEmpty()) {
-            resumo.append("- Sem historico anterior.\n");
+            resumo.append("- Nenhuma interacao registrada.\n");
         } else {
-            for (String linha : historico) {
-                resumo.append("- ").append(linha).append("\n");
+            for (String item : historico) {
+                resumo.append("- ").append(item).append("\n");
             }
         }
 
         return resumo.toString();
-    }
-
-    private String valorOuNaoInformado(String valor) {
-        if (valor == null || valor.trim().isEmpty()) {
-            return "Nao informado";
-        }
-
-        return valor;
     }
 
     private String extrairValor(String texto, String chave) {

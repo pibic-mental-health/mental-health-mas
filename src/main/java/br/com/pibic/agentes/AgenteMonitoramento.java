@@ -11,7 +11,7 @@ public class AgenteMonitoramento extends Agent {
 
     @Override
     protected void setup() {
-        System.out.println("Agente Monitoramento iniciado: " + getLocalName());
+        System.out.println("Agente Monitoramento Simulado iniciado: " + getLocalName());
 
         addBehaviour(new CyclicBehaviour() {
             @Override
@@ -23,12 +23,13 @@ public class AgenteMonitoramento extends Agent {
 
                     if (conteudo.contains("iniciar=true")) {
                         String perfil = extrairValor(conteudo, "perfil");
+                        String modo = extrairValor(conteudo, "modo");
 
                         if (perfil == null || perfil.isEmpty()) {
                             perfil = "GERAL";
                         }
 
-                        iniciarMonitoramento(perfil);
+                        iniciarMonitoramentoSimulado(perfil, modo);
                     }
                 } else {
                     block();
@@ -37,9 +38,10 @@ public class AgenteMonitoramento extends Agent {
         });
     }
 
-    private void iniciarMonitoramento(String perfil) {
-        System.out.println("\n[MONITORAMENTO] Iniciando acompanhamento semanal...");
-        System.out.println("[MONITORAMENTO] Perfil do usuario: " + perfil);
+    private void iniciarMonitoramentoSimulado(String perfil, String modo) {
+        System.out.println("\n[MONITORAMENTO SIMULADO] Iniciando simulacao academica de acompanhamento semanal...");
+        System.out.println("[MONITORAMENTO SIMULADO] Perfil usado na simulacao: " + perfil);
+        System.out.println("[MONITORAMENTO SIMULADO] Observacao: dados gerados artificialmente para demonstracao tecnica.");
 
         StringBuilder dadosSemana = new StringBuilder();
         Random random = new Random();
@@ -56,18 +58,18 @@ public class AgenteMonitoramento extends Agent {
                     + ",energia=" + energia
                     + ",sono=" + sono;
 
-            System.out.println("[MONITORAMENTO] " + registro);
+            System.out.println("[MONITORAMENTO SIMULADO] " + registro);
 
             dadosSemana.append(registro).append(";");
         }
 
         ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
         msg.addReceiver(new AID("agenteRelatorio", AID.ISLOCALNAME));
-        msg.setContent("perfil=" + perfil + ";dados=" + dadosSemana.toString());
+        msg.setContent("perfil=" + perfil + ";modo=simulado;dados=" + dadosSemana.toString());
 
         send(msg);
 
-        System.out.println("\n[MONITORAMENTO] Dados enviados para o AgenteRelatorio");
+        System.out.println("\n[MONITORAMENTO SIMULADO] Dados simulados enviados para o AgenteRelatorio");
     }
 
     private String extrairValor(String texto, String chave) {

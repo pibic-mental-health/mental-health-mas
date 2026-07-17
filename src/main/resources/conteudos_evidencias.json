@@ -1,0 +1,122 @@
+[
+  {
+    "perfil": "ANSIEDADE",
+    "tipo": "respiracao",
+    "titulo": "Respiração guiada curta",
+    "descricao": "Prática breve de respiração consciente para ajudar a desacelerar em momentos de preocupação.",
+    "palavrasChave": ["preocupado", "preocupacao", "ansioso", "ansiedade", "nervoso", "relaxar", "acelerado"],
+    "nivelEvidencia": "baseado_em_mindfulness",
+    "fonte": "Goyal et al., 2014",
+    "referencia": "Meditation Programs for Psychological Stress and Well-being",
+    "pontuacaoBase": 9,
+    "observacao": "Uso educativo. Não deve ser tratado como intervenção clínica isolada."
+  },
+  {
+    "perfil": "ANSIEDADE",
+    "tipo": "meditacao",
+    "titulo": "Prática breve de mindfulness",
+    "descricao": "Exercício educativo de atenção plena para observar a respiração e reduzir a aceleração do momento.",
+    "palavrasChave": ["preocupado", "ansiedade", "relaxar", "pensamentos", "tensao", "estresse"],
+    "nivelEvidencia": "revisao_sistematica",
+    "fonte": "Goyal et al., 2014",
+    "referencia": "Meditation Programs for Psychological Stress and Well-being",
+    "pontuacaoBase": 8,
+    "observacao": "Uso educativo. Não substitui avaliação ou acompanhamento profissional."
+  },
+  {
+    "perfil": "ANSIEDADE",
+    "tipo": "organizacao",
+    "titulo": "Organização de preocupações",
+    "descricao": "Atividade educativa para listar preocupações, separar o que pode ser resolvido agora e reduzir sobrecarga mental.",
+    "palavrasChave": ["preocupado", "preocupacao", "sobrecarga", "problemas", "pensamentos", "ansioso"],
+    "nivelEvidencia": "educativo",
+    "fonte": "Base curada do projeto",
+    "referencia": "Estratégia educativa de organização emocional",
+    "pontuacaoBase": 6,
+    "observacao": "Apoio inicial. Não substitui acompanhamento psicológico."
+  },
+  {
+    "perfil": "DEPRESSAO",
+    "tipo": "atividade_fisica",
+    "titulo": "Caminhada leve",
+    "descricao": "Sugestão educativa de atividade física leve, respeitando limites pessoais e condições de saúde.",
+    "palavrasChave": ["triste", "desanimado", "energia", "cansado", "isolamento", "sem vontade", "humor"],
+    "nivelEvidencia": "umbrella_review",
+    "fonte": "Singh et al., 2023",
+    "referencia": "Effectiveness of physical activity interventions for improving depression, anxiety and distress",
+    "pontuacaoBase": 9,
+    "observacao": "Deve respeitar condições físicas, limitações individuais e orientação profissional quando necessário."
+  },
+  {
+    "perfil": "DEPRESSAO",
+    "tipo": "musica",
+    "titulo": "Escuta musical orientada",
+    "descricao": "Escuta de músicas calmas ou significativas como apoio emocional educativo.",
+    "palavrasChave": ["triste", "humor", "desanimado", "isolamento", "cansado", "emoção"],
+    "nivelEvidencia": "revisao_cochrane",
+    "fonte": "Aalbers et al., 2017",
+    "referencia": "Music therapy for depression",
+    "pontuacaoBase": 8,
+    "observacao": "Musicoterapia é diferente de ouvir música sem orientação profissional. Aqui o uso é apenas educativo."
+  },
+  {
+    "perfil": "DEPRESSAO",
+    "tipo": "rotina",
+    "titulo": "Pequena ação possível no dia",
+    "descricao": "Sugestão educativa para escolher uma pequena tarefa possível, reduzindo a sensação de bloqueio.",
+    "palavrasChave": ["desanimado", "sem vontade", "cansado", "rotina", "energia", "triste"],
+    "nivelEvidencia": "educativo",
+    "fonte": "Base curada do projeto",
+    "referencia": "Estratégia educativa de ativação comportamental simplificada",
+    "pontuacaoBase": 7,
+    "observacao": "Uso apenas educativo e demonstrativo."
+  },
+  {
+    "perfil": "MISTO",
+    "tipo": "meditacao",
+    "titulo": "Meditação curta com foco na respiração",
+    "descricao": "Prática breve para observar a respiração e reduzir sobrecarga emocional no momento.",
+    "palavrasChave": ["preocupado", "relaxar", "triste", "ansioso", "sobrecarga", "humor", "nervoso"],
+    "nivelEvidencia": "revisao_sistematica",
+    "fonte": "Goyal et al., 2014",
+    "referencia": "Meditation Programs for Psychological Stress and Well-being",
+    "pontuacaoBase": 9,
+    "observacao": "Uso educativo e demonstrativo. Não substitui acompanhamento psicológico."
+  },
+  {
+    "perfil": "MISTO",
+    "tipo": "atividade_fisica",
+    "titulo": "Movimento leve durante o dia",
+    "descricao": "Atividade física leve, como caminhada curta, alongamento ou movimento corporal simples.",
+    "palavrasChave": ["ansioso", "triste", "energia", "humor", "tensao", "relaxar", "cansado"],
+    "nivelEvidencia": "umbrella_review",
+    "fonte": "Singh et al., 2023",
+    "referencia": "Effectiveness of physical activity interventions for improving depression, anxiety and distress",
+    "pontuacaoBase": 8,
+    "observacao": "Respeitar limites pessoais. Não realizar esforço excessivo."
+  },
+  {
+    "perfil": "MISTO",
+    "tipo": "respiracao",
+    "titulo": "Pausa de respiração e aterramento",
+    "descricao": "Pausa curta para respirar, observar o ambiente e reduzir a intensidade emocional do momento.",
+    "palavrasChave": ["preocupado", "relaxar", "ansioso", "nervoso", "tensao", "sobrecarga"],
+    "nivelEvidencia": "baseado_em_mindfulness",
+    "fonte": "Base curada do projeto",
+    "referencia": "Estratégia educativa baseada em atenção plena",
+    "pontuacaoBase": 8,
+    "observacao": "Uso educativo. Não representa intervenção clínica."
+  },
+  {
+    "perfil": "GERAL",
+    "tipo": "autocuidado",
+    "titulo": "Pausa breve de autocuidado",
+    "descricao": "Separar alguns minutos para respirar, beber água e organizar uma pequena ação possível para o dia.",
+    "palavrasChave": ["cansado", "estresse", "rotina", "preocupado", "dia", "sobrecarga"],
+    "nivelEvidencia": "educativo",
+    "fonte": "Base curada do projeto",
+    "referencia": "Conteúdo educativo não clínico",
+    "pontuacaoBase": 5,
+    "observacao": "Apoio inicial. Não substitui profissional."
+  }
+]

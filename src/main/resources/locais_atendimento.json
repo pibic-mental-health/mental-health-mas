@@ -1,0 +1,46 @@
+[
+  {
+    "nome": "CAPS II Brasília",
+    "tipo": "CAPS",
+    "descricao": "Centro de Atenção Psicossocial voltado ao atendimento de pessoas em sofrimento psíquico.",
+    "cidade": "Brasilia",
+    "uf": "DF",
+    "endereco": "Endereço demonstrativo",
+    "telefone": "Contato demonstrativo",
+    "fonte": "Base simulada do projeto",
+    "observacao": "Registro demonstrativo. Em uso real, os dados devem ser validados em fontes oficiais."
+  },
+  {
+    "nome": "Unidade Básica de Saúde - Asa Sul",
+    "tipo": "UBS",
+    "descricao": "Unidade básica que pode orientar o cidadão sobre acolhimento e encaminhamento na rede pública.",
+    "cidade": "Brasilia",
+    "uf": "DF",
+    "endereco": "Endereço demonstrativo",
+    "telefone": "Contato demonstrativo",
+    "fonte": "Base simulada do projeto",
+    "observacao": "Registro demonstrativo. Confirme funcionamento nos canais oficiais."
+  },
+  {
+    "nome": "Serviço de Saúde Mental Ambulatorial",
+    "tipo": "Ambulatório",
+    "descricao": "Serviço ambulatorial demonstrativo relacionado à atenção em saúde mental.",
+    "cidade": "Brasilia",
+    "uf": "DF",
+    "endereco": "Endereço demonstrativo",
+    "telefone": "Contato demonstrativo",
+    "fonte": "Base simulada do projeto",
+    "observacao": "Registro fictício para demonstração acadêmica."
+  },
+  {
+    "nome": "CAPS Municipal",
+    "tipo": "CAPS",
+    "descricao": "Serviço público de atenção psicossocial cadastrado de forma demonstrativa.",
+    "cidade": "Sao Paulo",
+    "uf": "SP",
+    "endereco": "Endereço demonstrativo",
+    "telefone": "Contato demonstrativo",
+    "fonte": "Base simulada do projeto",
+    "observacao": "Em aplicação real, consultar CNES ou dados oficiais."
+  }
+]

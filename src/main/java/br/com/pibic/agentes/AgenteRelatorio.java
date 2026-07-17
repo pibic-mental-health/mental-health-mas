@@ -1,5 +1,6 @@
 package br.com.pibic.agentes;
 
+import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
@@ -8,7 +9,7 @@ public class AgenteRelatorio extends Agent {
 
     @Override
     protected void setup() {
-        System.out.println("Agente Relatorio iniciado: " + getLocalName());
+        System.out.println("Agente Relatorio Simulado iniciado: " + getLocalName());
 
         addBehaviour(new CyclicBehaviour() {
             @Override
@@ -20,15 +21,18 @@ public class AgenteRelatorio extends Agent {
 
                     String conteudo = mensagem.getContent();
 
-                    System.out.println("\n[RELATORIO] Dados recebidos:");
+                    System.out.println("\n[RELATORIO SIMULADO] Dados recebidos:");
                     System.out.println(conteudo);
 
-                    String dados = extrairValor(conteudo, "dados");
+                    String perfil = extrairValor(conteudo, "perfil");
+                    String dados = extrairDados(conteudo);
 
-                    String relatorio = gerarRelatorio(dados);
+                    String relatorio = gerarRelatorioSimulado(perfil, dados);
 
-                    System.out.println("\n[RELATORIO GERADO]");
+                    System.out.println("\n[RELATORIO SIMULADO GERADO]");
                     System.out.println(relatorio);
+
+                    enviarRelatorioParaConversacional(perfil, relatorio);
 
                 } else {
                     block();
@@ -37,7 +41,31 @@ public class AgenteRelatorio extends Agent {
         });
     }
 
+    private void enviarRelatorioParaConversacional(String perfil, String relatorio) {
+        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        msg.addReceiver(new AID("agenteConversacional", AID.ISLOCALNAME));
+        msg.setContent("tipo=relatorio_simulado;perfil=" + perfil + ";relatorio=" + relatorio);
+
+        send(msg);
+
+        System.out.println("\n[RELATORIO SIMULADO] Relatorio enviado para o AgenteConversacional");
+    }
+
     private String extrairValor(String texto, String chave) {
+        String[] partes = texto.split(";");
+
+        for (String parte : partes) {
+            String[] kv = parte.split("=", 2);
+
+            if (kv.length == 2 && kv[0].trim().equalsIgnoreCase(chave)) {
+                return kv[1].trim();
+            }
+        }
+
+        return "";
+    }
+
+    private String extrairDados(String texto) {
         String[] partes = texto.split(";");
 
         StringBuilder dados = new StringBuilder();
@@ -60,7 +88,7 @@ public class AgenteRelatorio extends Agent {
         return dados.toString();
     }
 
-    private String gerarRelatorio(String dados) {
+    private String gerarRelatorioSimulado(String perfil, String dados) {
 
         String[] dias = dados.split(";");
 
@@ -87,14 +115,19 @@ public class AgenteRelatorio extends Agent {
                 String[] kv = campo.split("=");
 
                 if (kv.length == 2) {
+                    String chave = kv[0].trim();
 
-                    String chave = kv[0];
-                    int valor = Integer.parseInt(kv[1]);
+                    try {
+                        int valor = Integer.parseInt(kv[1].trim());
 
-                    if (chave.equals("ansiedade")) ansiedade = valor;
-                    if (chave.equals("humor")) humor = valor;
-                    if (chave.equals("energia")) energia = valor;
-                    if (chave.equals("sono")) sono = valor;
+                        if (chave.equals("ansiedade")) ansiedade = valor;
+                        if (chave.equals("humor")) humor = valor;
+                        if (chave.equals("energia")) energia = valor;
+                        if (chave.equals("sono")) sono = valor;
+
+                    } catch (NumberFormatException e) {
+                        System.out.println("[RELATORIO SIMULADO] Valor numerico invalido ignorado: " + campo);
+                    }
                 }
             }
 
@@ -106,6 +139,10 @@ public class AgenteRelatorio extends Agent {
             totalDias++;
         }
 
+        if (totalDias == 0) {
+            return "Nao foi possivel gerar relatorio simulado: dados insuficientes.";
+        }
+
         int mediaAnsiedade = somaAnsiedade / totalDias;
         int mediaHumor = somaHumor / totalDias;
         int mediaEnergia = somaEnergia / totalDias;
@@ -114,19 +151,22 @@ public class AgenteRelatorio extends Agent {
         String interpretacao;
 
         if (mediaAnsiedade >= 3) {
-            interpretacao = "Foi observado um nivel elevado de ansiedade durante a semana.";
+            interpretacao = "Na simulacao, foi observado um nivel elevado de ansiedade ao longo da semana.";
         } else if (mediaHumor <= 1) {
-            interpretacao = "Foi observado um nivel baixo de humor durante a semana.";
+            interpretacao = "Na simulacao, foi observado um nivel baixo de humor ao longo da semana.";
         } else {
-            interpretacao = "Os dados indicam um estado emocional relativamente estavel.";
+            interpretacao = "Na simulacao, os indicadores sugerem estabilidade emocional relativa.";
         }
 
-        return "Resumo semanal:\n"
-                + "- Media de ansiedade: " + mediaAnsiedade + "\n"
-                + "- Media de humor: " + mediaHumor + "\n"
-                + "- Media de energia: " + mediaEnergia + "\n"
-                + "- Media de sono: " + mediaSono + "\n\n"
+        return "SIMULACAO DE RELATORIO SEMANAL\n"
+                + "Perfil usado na simulacao: " + perfil + "\n"
+                + "Este relatorio possui finalidade academica e demonstrativa.\n"
+                + "Nao representa avaliacao clinica, diagnostico ou acompanhamento psicologico real.\n\n"
+                + "- Media simulada de ansiedade: " + mediaAnsiedade + "\n"
+                + "- Media simulada de humor: " + mediaHumor + "\n"
+                + "- Media simulada de energia: " + mediaEnergia + "\n"
+                + "- Media simulada de sono: " + mediaSono + "\n\n"
                 + interpretacao + "\n"
-                + "Recomendacao: Considere procurar apoio psicologico se necessario.";
+                + "Observacao: em um uso real, esta etapa dependeria de aprovacao etica e supervisao profissional.";
     }
 }

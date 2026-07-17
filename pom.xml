@@ -19,6 +19,12 @@
             <artifactId>jade</artifactId>
             <version>4.6.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -41,7 +47,8 @@
                             agenteSeguranca:br.com.pibic.agentes.AgenteSeguranca;
                             agenteMemoria:br.com.pibic.agentes.AgenteMemoria;
                             agenteConteudo:br.com.pibic.agentes.AgenteConteudo;
-                            agentePsicologo:br.com.pibic.agentes.AgentePsicologo
+                            agentePsicologo:br.com.pibic.agentes.AgentePsicologo;
+                            agenteLocalAtendimento:br.com.pibic.agentes.AgenteLocalAtendimento
                         </argument>
                     </arguments>
                 </configuration>
