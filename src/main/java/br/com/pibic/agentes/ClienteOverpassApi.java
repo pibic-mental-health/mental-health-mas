@@ -16,7 +16,11 @@ import com.google.gson.JsonParser;
 
 public class ClienteOverpassApi {
 
-    private static final String OVERPASS_URL = "https://overpass-api.de/api/interpreter";
+    private static final String[] OVERPASS_URLS = {
+            "https://overpass.kumi.systems/api/interpreter",
+            "https://overpass-api.de/api/interpreter",
+            "https://overpass.openstreetmap.ru/api/interpreter"
+    };
 
     public static List<LocalAtendimentoResultado> buscarLocais(String cidade, String uf) {
         List<LocalAtendimentoResultado> locais = new ArrayList<LocalAtendimentoResultado>();
@@ -28,21 +32,31 @@ public class ClienteOverpassApi {
             return locais;
         }
 
-        try {
-            String query = montarConsultaOverpass(bbox);
+        List<String> consultas = montarConsultasOverpass(bbox);
 
-            System.out.println("[OVERPASS] Consultando OpenStreetMap/Overpass para " + cidade + "/" + uf);
+        for (String query : consultas) {
+            try {
+                System.out.println("[OVERPASS] Consultando OpenStreetMap/Overpass para " + cidade + "/" + uf);
 
-            String respostaJson = executarConsulta(query);
+                String respostaJson = executarConsulta(query);
 
-            if (respostaJson == null || respostaJson.trim().isEmpty()) {
-                return locais;
+                if (respostaJson == null || respostaJson.trim().isEmpty()) {
+                    continue;
+                }
+
+                List<LocalAtendimentoResultado> encontrados = extrairLocais(respostaJson, cidade, uf);
+
+                for (LocalAtendimentoResultado local : encontrados) {
+                    locais.add(local);
+                }
+
+                if (!locais.isEmpty()) {
+                    break;
+                }
+
+            } catch (Exception e) {
+                System.out.println("[OVERPASS] Erro ao consultar Overpass: " + e.getMessage());
             }
-
-            locais = extrairLocais(respostaJson, cidade, uf);
-
-        } catch (Exception e) {
-            System.out.println("[OVERPASS] Erro ao consultar Overpass: " + e.getMessage());
         }
 
         System.out.println("[OVERPASS] Locais relevantes encontrados: " + locais.size());
@@ -50,60 +64,89 @@ public class ClienteOverpassApi {
         return locais;
     }
 
-    private static String montarConsultaOverpass(String bbox) {
-        return "[out:json][timeout:25];"
+    private static List<String> montarConsultasOverpass(String bbox) {
+        List<String> consultas = new ArrayList<String>();
+
+        String consultaCaps = "[out:json][timeout:20];"
+                + "("
+                + "node[\"name\"~\"CAPS|Centro de Atenção Psicossocial|Centro de Atencao Psicossocial\",i](" + bbox + ");"
+                + "way[\"name\"~\"CAPS|Centro de Atenção Psicossocial|Centro de Atencao Psicossocial\",i](" + bbox + ");"
+                + "relation[\"name\"~\"CAPS|Centro de Atenção Psicossocial|Centro de Atencao Psicossocial\",i](" + bbox + ");"
+                + ");"
+                + "out center 25;";
+
+        String consultaSaudeMental = "[out:json][timeout:20];"
+                + "("
+                + "node[\"name\"~\"saude mental|saúde mental|psicossocial|psiquiatr|psicolog\",i](" + bbox + ");"
+                + "way[\"name\"~\"saude mental|saúde mental|psicossocial|psiquiatr|psicolog\",i](" + bbox + ");"
+                + "relation[\"name\"~\"saude mental|saúde mental|psicossocial|psiquiatr|psicolog\",i](" + bbox + ");"
+                + ");"
+                + "out center 25;";
+
+        String consultaHealthcare = "[out:json][timeout:20];"
                 + "("
                 + "node[\"healthcare\"=\"psychotherapist\"](" + bbox + ");"
                 + "way[\"healthcare\"=\"psychotherapist\"](" + bbox + ");"
                 + "relation[\"healthcare\"=\"psychotherapist\"](" + bbox + ");"
-
                 + "node[\"healthcare:speciality\"~\"psychiatry|psychotherapy|psychology\",i](" + bbox + ");"
                 + "way[\"healthcare:speciality\"~\"psychiatry|psychotherapy|psychology\",i](" + bbox + ");"
                 + "relation[\"healthcare:speciality\"~\"psychiatry|psychotherapy|psychology\",i](" + bbox + ");"
-
-                + "node[\"name\"~\"CAPS|Centro de Atenção Psicossocial|Centro de Atencao Psicossocial|psicolog|psiquiatr|saude mental|saúde mental\",i](" + bbox + ");"
-                + "way[\"name\"~\"CAPS|Centro de Atenção Psicossocial|Centro de Atencao Psicossocial|psicolog|psiquiatr|saude mental|saúde mental\",i](" + bbox + ");"
-                + "relation[\"name\"~\"CAPS|Centro de Atenção Psicossocial|Centro de Atencao Psicossocial|psicolog|psiquiatr|saude mental|saúde mental\",i](" + bbox + ");"
                 + ");"
-                + "out center 50;";
+                + "out center 25;";
+
+        consultas.add(consultaCaps);
+        consultas.add(consultaSaudeMental);
+        consultas.add(consultaHealthcare);
+
+        return consultas;
     }
 
     private static String executarConsulta(String query) throws Exception {
-        URL url = new URL(OVERPASS_URL);
+        for (String endpoint : OVERPASS_URLS) {
+            try {
+                System.out.println("[OVERPASS] Tentando endpoint: " + endpoint);
 
-        HttpURLConnection conexao = (HttpURLConnection) url.openConnection();
-        conexao.setRequestMethod("POST");
-        conexao.setConnectTimeout(15000);
-        conexao.setReadTimeout(15000);
-        conexao.setDoOutput(true);
-        conexao.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                URL url = new URL(endpoint);
 
-        String corpo = "data=" + URLEncoder.encode(query, "UTF-8");
+                HttpURLConnection conexao = (HttpURLConnection) url.openConnection();
+                conexao.setRequestMethod("POST");
+                conexao.setConnectTimeout(20000);
+                conexao.setReadTimeout(30000);
+                conexao.setDoOutput(true);
+                conexao.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
 
-        OutputStream os = conexao.getOutputStream();
-        os.write(corpo.getBytes("UTF-8"));
-        os.flush();
-        os.close();
+                String corpo = "data=" + URLEncoder.encode(query, "UTF-8");
 
-        int statusCode = conexao.getResponseCode();
+                OutputStream os = conexao.getOutputStream();
+                os.write(corpo.getBytes("UTF-8"));
+                os.flush();
+                os.close();
 
-        if (statusCode < 200 || statusCode >= 300) {
-            System.out.println("[OVERPASS] Resposta HTTP inesperada: " + statusCode);
-            return "";
+                int statusCode = conexao.getResponseCode();
+
+                if (statusCode >= 200 && statusCode < 300) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conexao.getInputStream(), "UTF-8"));
+
+                    StringBuilder resposta = new StringBuilder();
+                    String linha;
+
+                    while ((linha = reader.readLine()) != null) {
+                        resposta.append(linha);
+                    }
+
+                    reader.close();
+
+                    return resposta.toString();
+                }
+
+                System.out.println("[OVERPASS] Endpoint retornou HTTP " + statusCode);
+
+            } catch (Exception e) {
+                System.out.println("[OVERPASS] Falha no endpoint: " + endpoint + " | " + e.getMessage());
+            }
         }
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(conexao.getInputStream(), "UTF-8"));
-
-        StringBuilder resposta = new StringBuilder();
-        String linha;
-
-        while ((linha = reader.readLine()) != null) {
-            resposta.append(linha);
-        }
-
-        reader.close();
-
-        return resposta.toString();
+        return "";
     }
 
     private static List<LocalAtendimentoResultado> extrairLocais(String json, String cidade, String uf) {
@@ -258,7 +301,7 @@ public class ClienteOverpassApi {
         String ufNormalizada = ClassificadorLocalAtendimento.normalizar(uf).toUpperCase();
 
         if (cidadeNormalizada.equals("brasilia") && ufNormalizada.equals("DF")) {
-            return "-16.1000,-48.3000,-15.5000,-47.3000";
+            return "-15.9500,-48.1500,-15.6000,-47.6500";
         }
 
         if (cidadeNormalizada.equals("sao paulo") && ufNormalizada.equals("SP")) {

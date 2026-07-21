@@ -40,6 +40,7 @@
                         <argument>-gui</argument>
                         <argument>
                             agenteTriagem:br.com.pibic.agentes.AgenteTriagemFormulario;
+                            agenteIntervencao:br.com.pibic.agentes.AgenteIntervencao;
                             agenteConversacional:br.com.pibic.agentes.AgenteConversacional;
                             agentePaciente:br.com.pibic.agentes.AgentePaciente;
                             agenteMonitoramento:br.com.pibic.agentes.AgenteMonitoramento;

@@ -9,9 +9,14 @@ import jade.lang.acl.ACLMessage;
 
 public class AgenteMemoria extends Agent {
 
+    private static final int LIMITE_HISTORICO = 10;
+    private static final int LIMITE_TEXTO_HISTORICO = 500;
+
     private String nome = "";
     private String perfil = "";
     private String risco = "";
+    private String protocoloIntervencao = "";
+
     private String statusConteudo = "";
     private String statusPsicologo = "";
     private String statusLocalAtendimento = "";
@@ -53,13 +58,18 @@ public class AgenteMemoria extends Agent {
                         System.out.println("[MEMORIA] Risco salvo: " + risco);
                     }
 
+                    else if (tipo.equalsIgnoreCase("protocolo_intervencao")) {
+                        protocoloIntervencao = valor;
+                        System.out.println("[MEMORIA] Protocolo de intervencao salvo: " + protocoloIntervencao);
+                    }
+
                     else if (tipo.equalsIgnoreCase("mensagem")) {
-                        historico.add("Usuario: " + valor);
+                        adicionarAoHistorico("Usuario: " + valor);
                         System.out.println("[MEMORIA] Mensagem armazenada");
                     }
 
                     else if (tipo.equalsIgnoreCase("resposta")) {
-                        historico.add("IA: " + valor);
+                        adicionarAoHistorico("IA: " + valor);
                         System.out.println("[MEMORIA] Resposta armazenada");
                     }
 
@@ -119,9 +129,13 @@ public class AgenteMemoria extends Agent {
     private String gerarResumo() {
         StringBuilder resumo = new StringBuilder();
 
-        resumo.append("Nome: ").append(nome).append("\n");
-        resumo.append("Perfil: ").append(perfil).append("\n");
-        resumo.append("Risco: ").append(risco).append("\n");
+        resumo.append("Nome: ").append(valorOuNaoInformado(nome)).append("\n");
+        resumo.append("Perfil: ").append(valorOuNaoInformado(perfil)).append("\n");
+        resumo.append("Risco: ").append(valorOuNaoInformado(risco)).append("\n");
+
+        if (!protocoloIntervencao.isEmpty()) {
+            resumo.append("Protocolo de intervencao: ").append(protocoloIntervencao).append("\n");
+        }
 
         if (!statusConteudo.isEmpty()) {
             resumo.append("Conteudo: ").append(statusConteudo).append("\n");
@@ -156,7 +170,45 @@ public class AgenteMemoria extends Agent {
         return resumo.toString();
     }
 
+    private void adicionarAoHistorico(String item) {
+        if (item == null || item.trim().isEmpty()) {
+            return;
+        }
+
+        historico.add(limitarTexto(item));
+
+        while (historico.size() > LIMITE_HISTORICO) {
+            historico.remove(0);
+        }
+    }
+
+    private String limitarTexto(String texto) {
+        if (texto == null) {
+            return "";
+        }
+
+        String textoLimpo = texto.trim();
+
+        if (textoLimpo.length() <= LIMITE_TEXTO_HISTORICO) {
+            return textoLimpo;
+        }
+
+        return textoLimpo.substring(0, LIMITE_TEXTO_HISTORICO) + "...";
+    }
+
+    private String valorOuNaoInformado(String valor) {
+        if (valor == null || valor.trim().isEmpty()) {
+            return "Nao informado";
+        }
+
+        return valor;
+    }
+
     private String extrairValor(String texto, String chave) {
+        if (texto == null || texto.trim().isEmpty()) {
+            return "";
+        }
+
         String[] partes = texto.split(";");
 
         for (String parte : partes) {

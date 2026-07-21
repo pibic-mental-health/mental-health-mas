@@ -67,31 +67,73 @@ public class AgenteConversacional extends Agent {
 
                     System.out.println("[CONVERSACIONAL] Nivel de risco: " + risco);
 
+                    String decisaoIntervencao = consultarIntervencao(risco, perfil, mensagemUsuario);
+                    String protocolo = extrairValor(decisaoIntervencao, "protocolo");
+                    String mensagemIntervencao = extrairValor(decisaoIntervencao, "mensagem");
+
+                    boolean permitirIA = extrairBoolean(decisaoIntervencao, "permitirIA", true);
+                    boolean permitirConteudo = extrairBoolean(decisaoIntervencao, "permitirConteudo", true);
+                    boolean permitirPsicologo = extrairBoolean(decisaoIntervencao, "permitirPsicologo", true);
+                    boolean permitirLocalAtendimento = extrairBoolean(decisaoIntervencao, "permitirLocalAtendimento", true);
+                    boolean permitirMonitoramento = extrairBoolean(decisaoIntervencao, "permitirMonitoramento", true);
+                    boolean exibirBotaoCVV = extrairBoolean(decisaoIntervencao, "exibirBotaoCVV", false);
+                    String telefoneCVV = extrairValor(decisaoIntervencao, "telefoneCVV");
+
+                    salvarNaMemoria("protocolo_intervencao", protocolo);
+
+                    System.out.println("[CONVERSACIONAL] Protocolo de intervencao: " + protocolo);
+
                     String resposta;
 
-                    if (risco.equals("RISCO")) {
-                        resposta = respostaSeguranca();
+                    if (!permitirIA || risco.equals("RISCO")) {
+                        resposta = mensagemIntervencao;
+
+                        if (resposta == null || resposta.trim().isEmpty()) {
+                            resposta = respostaSeguranca();
+                        }
                     } else {
                         String memoria = consultarMemoria();
-                        String prompt = montarPrompt(perfil, mensagemUsuario, risco, memoria);
+                        String prompt = montarPrompt(perfil, mensagemUsuario, risco, memoria, protocolo);
 
                         System.out.println("[CONVERSACIONAL] Provedor de IA configurado: " + ClienteLLM.obterProvedor());
                         resposta = ClienteLLM.gerarResposta(prompt);
+                        resposta = limparRespostaClinica(resposta);
 
                         if (resposta == null || resposta.trim().isEmpty() || resposta.contains("Erro")) {
                             resposta = gerarRespostaFallback(perfil, mensagemUsuario, risco);
                         }
 
-                        resposta += "\n\nImportante: esta plataforma realiza apenas apoio inicial e triagem emocional. Ela nao substitui acompanhamento psicologico profissional.";
+                        if (mensagemIntervencao != null
+                                && !mensagemIntervencao.trim().isEmpty()
+                                && risco.equals("ATENCAO")) {
+                            resposta += "\n\n" + mensagemIntervencao;
+                        }
+                    }
 
-                        resposta += "\n\nSe voce quiser, posso sugerir alguns conteudos de apoio, como meditacao, respiracao, musica ou textos educativos. Deseja receber sugestoes de conteudo? (sim/nao)";
+                    resposta += "\n\nImportante: esta plataforma realiza apenas apoio inicial e triagem emocional. Ela nao substitui acompanhamento psicologico profissional.";
 
-                        if (deveSugerirPsicologo(perfil, risco)) {
-                            resposta += "\n\nTambem posso selecionar alguns psicologos cadastrados que tenham relacao com o perfil identificado na triagem. Deseja ver essas indicacoes? (sim/nao)";
+                    if (exibirBotaoCVV) {
+                        if (telefoneCVV == null || telefoneCVV.trim().isEmpty()) {
+                            telefoneCVV = "188";
                         }
 
-                        resposta += "\n\nTambem posso mostrar locais demonstrativos de atendimento, como UBS, CAPS ou servicos publicos de saude mental. Deseja visualizar locais de atendimento proximos? (sim/nao)";
+                        resposta += "\n\n[ACAO_RECOMENDADA] Ligar para o CVV pelo telefone " + telefoneCVV + ".";
+                        resposta += "\n[ACAO_RECOMENDADA] Procurar um servico de emergencia ou alguem de confianca que possa estar com voce agora.";
+                    }
 
+                    if (permitirConteudo) {
+                        resposta += "\n\nPosso sugerir alguns conteudos de apoio, como meditacao, respiracao, musica ou textos educativos. Deseja receber sugestoes de conteudo? (sim/nao)";
+                    }
+
+                    if (permitirPsicologo && deveSugerirPsicologo(perfil, risco)) {
+                        resposta += "\n\nTambem posso selecionar alguns psicologos cadastrados que tenham relacao com o perfil identificado na triagem. Deseja ver essas indicacoes? (sim/nao)";
+                    }
+
+                    if (permitirLocalAtendimento) {
+                        resposta += "\n\nTambem posso mostrar locais demonstrativos de atendimento, como UBS, CAPS ou servicos publicos de saude mental. Deseja visualizar locais de atendimento proximos? (sim/nao)";
+                    }
+
+                    if (permitirMonitoramento) {
                         resposta += "\n\nPara fins academicos, tambem posso mostrar uma simulacao de acompanhamento semanal, demonstrando como um profissional poderia acompanhar indicadores emocionais com apoio do sistema. Deseja visualizar essa simulacao? (sim/nao)";
                     }
 
@@ -146,7 +188,7 @@ public class AgenteConversacional extends Agent {
             reply.setContent(sugestao);
         } else {
             salvarNaMemoria("conteudo", "recusado");
-            reply.setContent("Tudo bem. Posso sugerir conteudos de apoio depois, se voce quiser.");
+            reply.setContent("Tudo bem. Os conteudos de apoio podem ser acessados em outro momento.");
         }
 
         send(reply);
@@ -169,7 +211,7 @@ public class AgenteConversacional extends Agent {
             reply.setContent(psicologos);
         } else {
             salvarNaMemoria("psicologo", "recusado");
-            reply.setContent("Tudo bem. Voce pode pedir indicacoes de profissionais quando se sentir confortavel.");
+            reply.setContent("Tudo bem. As indicacoes de profissionais podem ser consultadas em outro momento.");
         }
 
         send(reply);
@@ -196,7 +238,7 @@ public class AgenteConversacional extends Agent {
             reply.setContent(locais);
         } else {
             salvarNaMemoria("local_atendimento", "recusado");
-            reply.setContent("Tudo bem. A busca por locais de atendimento pode ser feita depois, se necessario.");
+            reply.setContent("Tudo bem. A busca por locais de atendimento pode ser feita em outro momento.");
         }
 
         send(reply);
@@ -222,7 +264,7 @@ public class AgenteConversacional extends Agent {
         } else {
             salvarNaMemoria("monitoramento_simulado", "recusado");
 
-            reply.setContent("Tudo bem. A simulacao de acompanhamento pode ser visualizada depois, se necessario.");
+            reply.setContent("Tudo bem. A simulacao de acompanhamento pode ser visualizada em outro momento.");
         }
 
         send(reply);
@@ -238,24 +280,35 @@ public class AgenteConversacional extends Agent {
                 || perfil.equals("MISTO");
     }
 
-    private String montarPrompt(String perfil, String mensagemUsuario, String risco, String memoria) {
+    private String montarPrompt(String perfil, String mensagemUsuario, String risco, String memoria, String protocolo) {
         if (perfil == null || perfil.isEmpty()) {
             perfil = "GERAL";
         }
 
-        return "Voce e um assistente empatico de apoio inicial em uma plataforma academica de triagem emocional.\n"
-                + "A plataforma nao realiza diagnostico, tratamento ou acompanhamento psicologico real.\n"
-                + "Ela apenas organiza informacoes iniciais e incentiva a busca por profissionais qualificados.\n\n"
+        if (protocolo == null || protocolo.isEmpty()) {
+            protocolo = "PROTOCOLO_APOIO_INICIAL";
+        }
+
+        return "Voce faz parte de um prototipo academico de triagem emocional inicial.\n"
+                + "A plataforma nao realiza diagnostico, nao indica tratamento e nao substitui acompanhamento psicologico profissional.\n"
+                + "Ela apenas organiza informacoes iniciais, acolhe a mensagem do usuario e incentiva a busca por profissionais qualificados quando fizer sentido.\n\n"
                 + "Informacoes do usuario:\n"
                 + memoria + "\n\n"
+                + "Perfil identificado pela triagem academica: " + perfil + "\n"
+                + "Nivel de risco identificado pelo agente de seguranca: " + risco + "\n"
+                + "Protocolo definido pelo agente de intervencao: " + protocolo + "\n"
                 + "Mensagem atual do usuario: " + mensagemUsuario + "\n\n"
                 + "Regras obrigatorias:\n"
                 + "- Use o nome do usuario se estiver disponivel.\n"
-                + "- Seja acolhedor, breve e humano.\n"
+                + "- Seja acolhedor, simples, breve e humano.\n"
                 + "- Nao afirme diagnosticos.\n"
+                + "- Nao diga que o usuario possui transtorno, doenca ou condicao clinica.\n"
                 + "- Nao diga que esta tratando o usuario.\n"
+                + "- Nao prometa melhora.\n"
                 + "- Nao prometa acompanhamento clinico.\n"
-                + "- Reforce que a plataforma nao substitui psicologo.\n"
+                + "- Evite termos clinicos fortes como diagnostico, tratamento, transtorno, doenca ou sintomas.\n"
+                + "- Prefira termos como sinais, momento de estresse, sobrecarga emocional, preocupacao, desconforto e apoio inicial.\n"
+                + "- Reforce que a plataforma nao substitui acompanhamento psicologico profissional.\n"
                 + "- Quando fizer sentido, incentive a busca por apoio profissional.\n\n"
                 + "Responda em portugues do Brasil com no maximo 150 palavras.";
     }
@@ -268,7 +321,7 @@ public class AgenteConversacional extends Agent {
 
     private String gerarRespostaFallback(String perfil, String mensagemUsuario, String risco) {
         if (risco.equals("ATENCAO")) {
-            return "Percebo que voce esta passando por um momento delicado. Estou aqui para acolher sua mensagem, mas esta plataforma nao substitui apoio psicologico profissional.";
+            return "Percebo que voce esta passando por um momento delicado. Estou aqui para acolher sua mensagem, mas esta plataforma realiza apenas apoio inicial e nao substitui acompanhamento psicologico profissional.";
         }
 
         if (perfil == null || perfil.isEmpty()) {
@@ -280,14 +333,119 @@ public class AgenteConversacional extends Agent {
                 return "Entendo que voce esta se sentindo preocupado(a). Posso te ouvir com calma, mas lembro que esta plataforma atua apenas como apoio inicial.";
 
             case "DEPRESSAO":
-                return "Sinto muito que voce esteja passando por isso. Voce nao esta sozinho(a), e buscar apoio profissional pode ser importante.";
+                return "Sinto muito que voce esteja passando por esse momento. Voce nao precisa lidar com isso sozinho(a), e buscar apoio profissional pode ser importante.";
 
             case "MISTO":
-                return "Percebo que existem sinais mistos no seu formulario. Podemos conversar com calma, mas a avaliacao adequada deve ser feita por um profissional.";
+                return "Percebo que seu formulario trouxe diferentes sinais de preocupacao e sobrecarga emocional. Podemos conversar com calma, mas uma avaliacao adequada deve ser feita por um profissional.";
 
             default:
                 return "Estou aqui para te ouvir e oferecer apoio inicial, sem substituir acompanhamento profissional.";
         }
+    }
+
+    private String limparRespostaClinica(String resposta) {
+        if (resposta == null || resposta.trim().isEmpty()) {
+            return "Estou aqui para te ouvir e organizar melhor o que voce esta sentindo. Esta plataforma realiza apenas apoio inicial e triagem emocional, sem substituir acompanhamento profissional.";
+        }
+
+        String texto = resposta;
+
+        texto = texto.replace(
+                "podem ser sintomas de um desequilíbrio emocional",
+                "podem estar relacionados a um momento de estresse ou sobrecarga emocional"
+        );
+
+        texto = texto.replace(
+                "podem ser sintomas de um desequilibrio emocional",
+                "podem estar relacionados a um momento de estresse ou sobrecarga emocional"
+        );
+
+        texto = texto.replace(
+                "sintomas de um desequilíbrio emocional",
+                "sinais de um momento de estresse ou sobrecarga emocional"
+        );
+
+        texto = texto.replace(
+                "sintomas de um desequilibrio emocional",
+                "sinais de um momento de estresse ou sobrecarga emocional"
+        );
+
+        texto = texto.replace(
+                "sintomas de ansiedade",
+                "sinais de preocupacao ou sobrecarga"
+        );
+
+        texto = texto.replace(
+                "sintomas de depressão",
+                "sinais de tristeza ou desanimo"
+        );
+
+        texto = texto.replace(
+                "sintomas de depressao",
+                "sinais de tristeza ou desanimo"
+        );
+
+        texto = texto.replace(
+                "transtorno de ansiedade",
+                "momento de ansiedade ou preocupacao intensa"
+        );
+
+        texto = texto.replace(
+                "transtorno depressivo",
+                "momento de tristeza ou desanimo persistente"
+        );
+
+        texto = texto.replace(
+                "doença mental",
+                "questao de saude emocional"
+        );
+
+        texto = texto.replace(
+                "doenca mental",
+                "questao de saude emocional"
+        );
+
+        texto = texto.replace(
+                "diagnosticar",
+                "compreender melhor"
+        );
+
+        texto = texto.replace(
+                "diagnóstico",
+                "triagem inicial"
+        );
+
+        texto = texto.replace(
+                "diagnostico",
+                "triagem inicial"
+        );
+
+        texto = texto.replace(
+                "tratamento",
+                "apoio profissional"
+        );
+
+        texto = texto.replace(
+                "tratar",
+                "apoiar"
+        );
+
+        texto = texto.replace(
+                "consulta de um psicólogo",
+                "acompanhamento de um psicologo"
+        );
+
+        texto = texto.replace(
+                "consulta de um psicologo",
+                "acompanhamento de um psicologo"
+        );
+
+        texto = texto.replace(
+                "consultoria de um profissional qualificado",
+                "apoio de um profissional qualificado"
+        );
+
+        return texto;
     }
 
     private String consultarConteudo(String perfil, String mensagemUsuario) {
@@ -338,6 +496,31 @@ public class AgenteConversacional extends Agent {
         return "Nao foi possivel consultar locais de atendimento no momento.";
     }
 
+    private String consultarIntervencao(String nivelRisco, String perfil, String mensagemUsuario) {
+        ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+        msg.addReceiver(new AID("agenteIntervencao", AID.ISLOCALNAME));
+        msg.setContent("nivelRisco=" + nivelRisco + ";perfil=" + perfil + ";mensagem=" + mensagemUsuario);
+
+        send(msg);
+
+        ACLMessage resposta = blockingReceive();
+
+        if (resposta != null) {
+            return resposta.getContent();
+        }
+
+        return "nivelRisco=" + nivelRisco + ";"
+                + "protocolo=PROTOCOLO_APOIO_INICIAL;"
+                + "permitirIA=true;"
+                + "permitirConteudo=true;"
+                + "permitirPsicologo=true;"
+                + "permitirLocalAtendimento=true;"
+                + "permitirMonitoramento=true;"
+                + "exibirBotaoCVV=false;"
+                + "telefoneCVV=188;"
+                + "mensagem=Fluxo de apoio inicial autorizado.";
+    }
+
     private void salvarNaMemoria(String tipo, String valor) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.addReceiver(new AID("agenteMemoria", AID.ISLOCALNAME));
@@ -377,7 +560,23 @@ public class AgenteConversacional extends Agent {
         return "";
     }
 
+    private boolean extrairBoolean(String texto, String chave, boolean valorPadrao) {
+        String valor = extrairValor(texto, chave);
+
+        if (valor == null || valor.trim().isEmpty()) {
+            return valorPadrao;
+        }
+
+        return valor.equalsIgnoreCase("true")
+                || valor.equalsIgnoreCase("sim")
+                || valor.equalsIgnoreCase("1");
+    }
+
     private String extrairValor(String texto, String chave) {
+        if (texto == null || texto.trim().isEmpty()) {
+            return "";
+        }
+
         String[] partes = texto.split(";");
 
         for (String parte : partes) {

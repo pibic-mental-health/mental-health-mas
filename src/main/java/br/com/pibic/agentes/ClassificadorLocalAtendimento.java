@@ -16,6 +16,13 @@ public class ClassificadorLocalAtendimento {
                 + valorSeguro(local.endereco)
         );
 
+        if (ehOrgaoReguladorOuProfissional(texto)) {
+            local.prioridade = 0;
+            local.categoria = "Orgao regulador ou entidade profissional";
+            local.categoriaRecomendacao = local.categoria;
+            return false;
+        }
+
         if (ehFalsoPositivo(texto) && !possuiTermoForteSaudeMental(texto)) {
             local.prioridade = 0;
             local.categoria = "Nao relacionado a saude mental";
@@ -41,6 +48,13 @@ public class ClassificadorLocalAtendimento {
             return true;
         }
 
+        if (ehInstituicaoAcademicaRelacionada(texto)) {
+            local.prioridade = 50;
+            local.categoria = "Instituicao relacionada - validar se oferece atendimento";
+            local.categoriaRecomendacao = local.categoria;
+            return true;
+        }
+
         if (texto.contains("psychotherapist")
                 || texto.contains("psicoterapia")
                 || texto.contains("psicologia")
@@ -49,7 +63,9 @@ public class ClassificadorLocalAtendimento {
                 || texto.contains("psiquiatria")
                 || texto.contains("psiquiatra")
                 || texto.contains("psiquiatrico")
-                || texto.contains("psiquiatrica")) {
+                || texto.contains("psiquiatrica")
+                || texto.contains("clinica de psicologia")
+                || texto.contains("clinica psicologica")) {
             local.prioridade = 80;
             local.categoria = "Psicologia / Psiquiatria / Psicoterapia";
             local.categoriaRecomendacao = local.categoria;
@@ -84,7 +100,7 @@ public class ClassificadorLocalAtendimento {
                 continue;
             }
 
-            String chave = montarChave(local);
+            String chave = montarChaveDeduplicacao(local);
 
             if (!chaves.contains(chave)) {
                 chaves.add(chave);
@@ -110,16 +126,135 @@ public class ClassificadorLocalAtendimento {
         return limitados;
     }
 
-    private static String montarChave(LocalAtendimentoResultado local) {
+    private static String montarChaveDeduplicacao(LocalAtendimentoResultado local) {
         if (local.codigoCnes != null && !local.codigoCnes.trim().isEmpty()) {
             return "cnes:" + local.codigoCnes.trim();
         }
 
-        if (local.idExterno != null && !local.idExterno.trim().isEmpty()) {
-            return "id:" + local.idExterno.trim();
+        String nomeNormalizado = limparNomeParaComparacao(local.nome);
+        String enderecoNormalizado = limparEnderecoParaComparacao(local.endereco);
+
+        if (nomeNormalizado.equals("caps") || nomeNormalizado.length() <= 5) {
+            return nomeNormalizado + "|coord:" + arredondar(local.latitude) + "," + arredondar(local.longitude);
         }
 
-        return normalizar(valorSeguro(local.nome) + "|" + valorSeguro(local.endereco));
+        if (!enderecoNormalizado.isEmpty()
+                && !enderecoNormalizado.contains("endereco nao informado")) {
+            return nomeNormalizado + "|" + enderecoNormalizado;
+        }
+
+        return nomeNormalizado;
+    }
+
+    public static String obterTipoParaExibicao(LocalAtendimentoResultado local) {
+        if (local == null) {
+            return "Nao informado";
+        }
+
+        String categoria = valorSeguro(local.categoria);
+        String tipo = valorSeguro(local.tipo);
+
+        if (categoria.equalsIgnoreCase("CAPS / Atencao Psicossocial")) {
+            return "CAPS / Atencao Psicossocial";
+        }
+
+        if (categoria.equalsIgnoreCase("Servico especializado em saude mental")) {
+            return "Servico de saude mental";
+        }
+
+        if (categoria.equalsIgnoreCase("Psicologia / Psiquiatria / Psicoterapia")) {
+            return "Psicologia / Psiquiatria / Psicoterapia";
+        }
+
+        if (categoria.equalsIgnoreCase("Instituicao relacionada - validar se oferece atendimento")) {
+            return "Instituicao academica ou relacionada";
+        }
+
+        if (categoria.equalsIgnoreCase("Porta de entrada da rede publica")) {
+            return "UBS / Centro de Saude / Atencao Primaria";
+        }
+
+        if (tipo == null || tipo.trim().isEmpty() || tipo.equalsIgnoreCase("Nao informado")) {
+            return "Nao informado";
+        }
+
+        return limparTipoBruto(tipo);
+    }
+
+    private static boolean ehOrgaoReguladorOuProfissional(String texto) {
+        return texto.contains("conselho federal de psicologia")
+                || texto.contains("conselho regional de psicologia")
+                || texto.contains("conselho de psicologia")
+                || texto.contains("cfp")
+                || texto.contains("crp ")
+                || texto.contains(" crp")
+                || texto.contains("sindicato dos psicologos")
+                || texto.contains("sindicato de psicologia")
+                || texto.contains("associacao brasileira de psicologia")
+                || texto.contains("sociedade brasileira de psicologia");
+    }
+
+    private static boolean ehInstituicaoAcademicaRelacionada(String texto) {
+        boolean possuiTermoAcademico = texto.contains("universidade")
+                || texto.contains("faculdade")
+                || texto.contains("unb")
+                || texto.contains("instituto de psicologia")
+                || texto.contains("departamento de psicologia")
+                || texto.contains("curso de psicologia")
+                || texto.contains("campus");
+
+        boolean possuiTermoSaudeMental = texto.contains("psicologia")
+                || texto.contains("psicologico")
+                || texto.contains("psicologica")
+                || texto.contains("psicoterapia")
+                || texto.contains("psiquiatria")
+                || texto.contains("saude mental");
+
+        return possuiTermoAcademico && possuiTermoSaudeMental;
+    }
+
+    private static String limparTipoBruto(String tipo) {
+        String texto = tipo;
+
+        texto = texto.replace("healthcare=", "");
+        texto = texto.replace("speciality=", "");
+        texto = texto.replace("amenity=", "");
+        texto = texto.replace("_", " ");
+
+        if (texto.length() > 120) {
+            texto = texto.substring(0, 120) + "...";
+        }
+
+        return texto;
+    }
+
+    private static String limparNomeParaComparacao(String nome) {
+        String texto = normalizar(nome);
+
+        texto = texto.replace("-", " ");
+        texto = texto.replace("  ", " ");
+        texto = texto.replace("centro de atencao psicossocial", "caps");
+        texto = texto.replace("centro atencao psicossocial", "caps");
+
+        return texto.trim();
+    }
+
+    private static String limparEnderecoParaComparacao(String endereco) {
+        String texto = normalizar(endereco);
+
+        texto = texto.replace(",", " ");
+        texto = texto.replace("-", " ");
+        texto = texto.replace("  ", " ");
+
+        return texto.trim();
+    }
+
+    private static String arredondar(double valor) {
+        if (valor == 0.0) {
+            return "0";
+        }
+
+        return String.format(java.util.Locale.US, "%.4f", valor);
     }
 
     private static boolean possuiTermoForteSaudeMental(String texto) {

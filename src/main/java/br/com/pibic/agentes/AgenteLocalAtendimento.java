@@ -122,7 +122,7 @@ public class AgenteLocalAtendimento extends Agent {
 
             resposta.append(i + 1).append(". ").append(valorSeguro(local.nome)).append("\n");
             resposta.append("   Categoria: ").append(valorSeguro(local.categoria)).append("\n");
-            resposta.append("   Tipo: ").append(valorSeguro(local.tipo)).append("\n");
+            resposta.append("   Tipo: ").append(ClassificadorLocalAtendimento.obterTipoParaExibicao(local)).append("\n");
             resposta.append("   Cidade/UF: ").append(valorSeguro(local.cidade)).append("/").append(valorSeguro(local.uf)).append("\n");
             resposta.append("   Endereco: ").append(valorSeguro(local.endereco)).append("\n");
             resposta.append("   Telefone: ").append(valorSeguro(local.telefone)).append("\n");
