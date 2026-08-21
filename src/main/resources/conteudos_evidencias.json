@@ -1,122 +1,337 @@
 [
   {
-    "perfil": "ANSIEDADE",
-    "tipo": "respiracao",
-    "titulo": "Respiração guiada curta",
-    "descricao": "Prática breve de respiração consciente para ajudar a desacelerar em momentos de preocupação.",
-    "palavrasChave": ["preocupado", "preocupacao", "ansioso", "ansiedade", "nervoso", "relaxar", "acelerado"],
-    "nivelEvidencia": "baseado_em_mindfulness",
-    "fonte": "Goyal et al., 2014",
-    "referencia": "Meditation Programs for Psychological Stress and Well-being",
-    "pontuacaoBase": 9,
-    "observacao": "Uso educativo. Não deve ser tratado como intervenção clínica isolada."
+    "ativo": true,
+    "id": "oms_aterramento_001",
+    "tipo": "aterramento",
+    "titulo": "Aterramento no momento presente",
+    "objetivo": "Ajudar a pessoa a recuperar contato com o momento presente quando estiver se sentindo sobrecarregada, tensa ou muito presa a preocupações.",
+    "quandoUsar": [
+      "Quando houver sensação de sobrecarga ou aceleração.",
+      "Quando estiver difícil manter a atenção no que está acontecendo agora."
+    ],
+    "passos": [
+      "Faça uma pausa breve e perceba os pensamentos e sentimentos presentes.",
+      "Volte a atenção para o corpo e para o contato dos pés com o chão.",
+      "Observe elementos ao redor, como o que você consegue ver, ouvir e tocar.",
+      "Retome, aos poucos, a atenção para a atividade que estava realizando."
+    ],
+    "tempoEstimado": "2 a 5 minutos",
+    "perfisPermitidos": [
+      "GERAL",
+      "ANSIEDADE",
+      "DEPRESSAO",
+      "MISTO"
+    ],
+    "perfisPrioritarios": [
+      "ANSIEDADE",
+      "MISTO",
+      "GERAL"
+    ],
+    "riscosPermitidos": [
+      "BAIXO_RISCO",
+      "ATENCAO"
+    ],
+    "intencoes": [
+      "preocupacao",
+      "sobrecarga",
+      "dificuldade_relaxar",
+      "falta_foco"
+    ],
+    "palavrasChave": [
+      "preocupado",
+      "ansioso",
+      "nervoso",
+      "tenso",
+      "sobrecarregado",
+      "acelerado",
+      "agitado",
+      "foco"
+    ],
+    "fonteInstitucional": "OMS/OPAS",
+    "materialBase": "Faça o que importa em tempos de estresse: um guia ilustrado",
+    "referencia": "World Health Organization. Doing What Matters in Times of Stress: An Illustrated Guide. 2020.",
+    "urlFonte": "https://www.paho.org/pt/documentos/em-tempos-estresse-faca-que-importa-em-tempos-estresse-um-guia-ilustrado",
+    "nivelValidacao": "guia_oms_baseado_em_evidencias_e_testes_de_campo",
+    "prioridade": 95,
+    "observacaoEtica": "Conteúdo educativo baseado em material institucional. Não substitui avaliação ou acompanhamento profissional."
   },
   {
-    "perfil": "ANSIEDADE",
-    "tipo": "meditacao",
-    "titulo": "Prática breve de mindfulness",
-    "descricao": "Exercício educativo de atenção plena para observar a respiração e reduzir a aceleração do momento.",
-    "palavrasChave": ["preocupado", "ansiedade", "relaxar", "pensamentos", "tensao", "estresse"],
-    "nivelEvidencia": "revisao_sistematica",
-    "fonte": "Goyal et al., 2014",
-    "referencia": "Meditation Programs for Psychological Stress and Well-being",
-    "pontuacaoBase": 8,
-    "observacao": "Uso educativo. Não substitui avaliação ou acompanhamento profissional."
+    "ativo": true,
+    "id": "oms_desenganchar_001",
+    "tipo": "pensamentos",
+    "titulo": "Perceber e se desenganchar de pensamentos difíceis",
+    "objetivo": "Ajudar a pessoa a notar pensamentos difíceis sem deixar que eles conduzam automaticamente sua atenção e suas ações.",
+    "quandoUsar": [
+      "Quando a mente estiver presa a uma preocupação repetitiva.",
+      "Quando um pensamento estiver dificultando a concentração em outras atividades."
+    ],
+    "passos": [
+      "Perceba que um pensamento difícil apareceu.",
+      "Nomeie mentalmente a experiência, reconhecendo que se trata de um pensamento.",
+      "Evite discutir com o pensamento naquele momento.",
+      "Redirecione a atenção para uma ação pequena que seja importante agora."
+    ],
+    "tempoEstimado": "2 a 5 minutos",
+    "perfisPermitidos": [
+      "GERAL",
+      "ANSIEDADE",
+      "DEPRESSAO",
+      "MISTO"
+    ],
+    "perfisPrioritarios": [
+      "ANSIEDADE",
+      "MISTO"
+    ],
+    "riscosPermitidos": [
+      "BAIXO_RISCO",
+      "ATENCAO"
+    ],
+    "intencoes": [
+      "preocupacao",
+      "pensamentos_dificeis",
+      "falta_foco"
+    ],
+    "palavrasChave": [
+      "pensamento",
+      "mente",
+      "pensando",
+      "preocupação",
+      "preocupacao",
+      "não paro",
+      "nao paro",
+      "foco"
+    ],
+    "fonteInstitucional": "OMS/OPAS",
+    "materialBase": "Faça o que importa em tempos de estresse: um guia ilustrado",
+    "referencia": "World Health Organization. Doing What Matters in Times of Stress: An Illustrated Guide. 2020.",
+    "urlFonte": "https://www.paho.org/pt/documentos/em-tempos-estresse-faca-que-importa-em-tempos-estresse-um-guia-ilustrado",
+    "nivelValidacao": "guia_oms_baseado_em_evidencias_e_testes_de_campo",
+    "prioridade": 90,
+    "observacaoEtica": "Conteúdo educativo. O exercício não deve ser apresentado como tratamento ou como substituto de cuidado profissional."
   },
   {
-    "perfil": "ANSIEDADE",
-    "tipo": "organizacao",
-    "titulo": "Organização de preocupações",
-    "descricao": "Atividade educativa para listar preocupações, separar o que pode ser resolvido agora e reduzir sobrecarga mental.",
-    "palavrasChave": ["preocupado", "preocupacao", "sobrecarga", "problemas", "pensamentos", "ansioso"],
-    "nivelEvidencia": "educativo",
-    "fonte": "Base curada do projeto",
-    "referencia": "Estratégia educativa de organização emocional",
-    "pontuacaoBase": 6,
-    "observacao": "Apoio inicial. Não substitui acompanhamento psicológico."
+    "ativo": true,
+    "id": "oms_abrir_espaco_001",
+    "tipo": "emocao",
+    "titulo": "Abrir espaço para emoções difíceis",
+    "objetivo": "Ajudar a pessoa a reconhecer uma emoção difícil e continuar agindo com cuidado, sem precisar eliminar a emoção primeiro.",
+    "quandoUsar": [
+      "Quando tristeza, medo, frustração ou tensão estiverem muito presentes.",
+      "Quando houver tentativa constante de lutar contra o que está sentindo."
+    ],
+    "passos": [
+      "Perceba qual emoção está presente neste momento.",
+      "Observe em que parte do corpo ela parece mais perceptível.",
+      "Respire de maneira natural e permita que a sensação esteja presente sem precisar expulsá-la.",
+      "Quando estiver pronto, volte a atenção para uma pequena ação possível."
+    ],
+    "tempoEstimado": "3 a 5 minutos",
+    "perfisPermitidos": [
+      "GERAL",
+      "ANSIEDADE",
+      "DEPRESSAO",
+      "MISTO"
+    ],
+    "perfisPrioritarios": [
+      "DEPRESSAO",
+      "MISTO",
+      "ANSIEDADE"
+    ],
+    "riscosPermitidos": [
+      "BAIXO_RISCO",
+      "ATENCAO"
+    ],
+    "intencoes": [
+      "emocao_dificil",
+      "sobrecarga",
+      "dificuldade_relaxar"
+    ],
+    "palavrasChave": [
+      "triste",
+      "medo",
+      "angustia",
+      "angústia",
+      "frustrado",
+      "frustrada",
+      "tensão",
+      "tensao",
+      "emoção",
+      "emocao"
+    ],
+    "fonteInstitucional": "OMS/OPAS",
+    "materialBase": "Faça o que importa em tempos de estresse: um guia ilustrado",
+    "referencia": "World Health Organization. Doing What Matters in Times of Stress: An Illustrated Guide. 2020.",
+    "urlFonte": "https://www.paho.org/pt/documentos/em-tempos-estresse-faca-que-importa-em-tempos-estresse-um-guia-ilustrado",
+    "nivelValidacao": "guia_oms_baseado_em_evidencias_e_testes_de_campo",
+    "prioridade": 88,
+    "observacaoEtica": "Conteúdo educativo para manejo de estresse. Não representa psicoterapia nem tratamento clínico."
   },
   {
-    "perfil": "DEPRESSAO",
-    "tipo": "atividade_fisica",
-    "titulo": "Caminhada leve",
-    "descricao": "Sugestão educativa de atividade física leve, respeitando limites pessoais e condições de saúde.",
-    "palavrasChave": ["triste", "desanimado", "energia", "cansado", "isolamento", "sem vontade", "humor"],
-    "nivelEvidencia": "umbrella_review",
-    "fonte": "Singh et al., 2023",
-    "referencia": "Effectiveness of physical activity interventions for improving depression, anxiety and distress",
-    "pontuacaoBase": 9,
-    "observacao": "Deve respeitar condições físicas, limitações individuais e orientação profissional quando necessário."
+    "ativo": true,
+    "id": "oms_valores_001",
+    "tipo": "acao_com_significado",
+    "titulo": "Escolher uma pequena ação que importa",
+    "objetivo": "Ajudar a pessoa a sair da paralisia causada pela sobrecarga escolhendo uma ação pequena coerente com aquilo que considera importante.",
+    "quandoUsar": [
+      "Quando houver dificuldade de decidir por onde começar.",
+      "Quando preocupações estiverem atrapalhando uma ação importante da rotina."
+    ],
+    "passos": [
+      "Pense no que é importante para você nesta situação.",
+      "Escolha uma ação pequena e realista que combine com isso.",
+      "Faça somente o primeiro passo dessa ação.",
+      "Depois, observe se existe outro pequeno passo possível."
+    ],
+    "tempoEstimado": "5 minutos para escolher e iniciar",
+    "perfisPermitidos": [
+      "GERAL",
+      "ANSIEDADE",
+      "DEPRESSAO",
+      "MISTO"
+    ],
+    "perfisPrioritarios": [
+      "GERAL",
+      "ANSIEDADE",
+      "MISTO"
+    ],
+    "riscosPermitidos": [
+      "BAIXO_RISCO",
+      "ATENCAO"
+    ],
+    "intencoes": [
+      "acao_com_significado",
+      "sobrecarga",
+      "falta_foco",
+      "preocupacao"
+    ],
+    "palavrasChave": [
+      "rotina",
+      "prazo",
+      "começar",
+      "comecar",
+      "organizar",
+      "decisão",
+      "decisao",
+      "tarefa",
+      "trabalho",
+      "faculdade"
+    ],
+    "fonteInstitucional": "OMS/OPAS",
+    "materialBase": "Faça o que importa em tempos de estresse: um guia ilustrado",
+    "referencia": "World Health Organization. Doing What Matters in Times of Stress: An Illustrated Guide. 2020.",
+    "urlFonte": "https://www.paho.org/pt/documentos/em-tempos-estresse-faca-que-importa-em-tempos-estresse-um-guia-ilustrado",
+    "nivelValidacao": "guia_oms_baseado_em_evidencias_e_testes_de_campo",
+    "prioridade": 87,
+    "observacaoEtica": "Conteúdo educativo. A proposta é apoiar uma pequena ação cotidiana, e não realizar intervenção clínica."
   },
   {
-    "perfil": "DEPRESSAO",
-    "tipo": "musica",
-    "titulo": "Escuta musical orientada",
-    "descricao": "Escuta de músicas calmas ou significativas como apoio emocional educativo.",
-    "palavrasChave": ["triste", "humor", "desanimado", "isolamento", "cansado", "emoção"],
-    "nivelEvidencia": "revisao_cochrane",
-    "fonte": "Aalbers et al., 2017",
-    "referencia": "Music therapy for depression",
-    "pontuacaoBase": 8,
-    "observacao": "Musicoterapia é diferente de ouvir música sem orientação profissional. Aqui o uso é apenas educativo."
+    "ativo": true,
+    "id": "oms_gentileza_001",
+    "tipo": "autocompaixao",
+    "titulo": "Responder a si mesmo com mais gentileza",
+    "objetivo": "Ajudar a pessoa a perceber uma fala interna muito crítica e experimentar uma resposta mais cuidadosa consigo mesma.",
+    "quandoUsar": [
+      "Quando houver culpa, autocobrança ou sensação de fracasso.",
+      "Quando a pessoa estiver usando uma linguagem muito dura consigo mesma."
+    ],
+    "passos": [
+      "Perceba como você está falando consigo mesmo neste momento.",
+      "Imagine o que diria a alguém de quem gosta se essa pessoa estivesse na mesma situação.",
+      "Escolha uma frase mais cuidadosa e realista para dizer a si mesmo.",
+      "Volte a atenção para uma ação pequena de cuidado ou responsabilidade possível agora."
+    ],
+    "tempoEstimado": "2 a 5 minutos",
+    "perfisPermitidos": [
+      "GERAL",
+      "ANSIEDADE",
+      "DEPRESSAO",
+      "MISTO"
+    ],
+    "perfisPrioritarios": [
+      "DEPRESSAO",
+      "MISTO"
+    ],
+    "riscosPermitidos": [
+      "BAIXO_RISCO",
+      "ATENCAO"
+    ],
+    "intencoes": [
+      "autocritica",
+      "emocao_dificil"
+    ],
+    "palavrasChave": [
+      "culpa",
+      "fracasso",
+      "me cobro",
+      "cobrança",
+      "cobranca",
+      "sou ruim",
+      "não sou bom",
+      "nao sou bom"
+    ],
+    "fonteInstitucional": "OMS/OPAS",
+    "materialBase": "Faça o que importa em tempos de estresse: um guia ilustrado",
+    "referencia": "World Health Organization. Doing What Matters in Times of Stress: An Illustrated Guide. 2020.",
+    "urlFonte": "https://www.paho.org/pt/documentos/em-tempos-estresse-faca-que-importa-em-tempos-estresse-um-guia-ilustrado",
+    "nivelValidacao": "guia_oms_baseado_em_evidencias_e_testes_de_campo",
+    "prioridade": 84,
+    "observacaoEtica": "Conteúdo educativo baseado no material institucional da OMS/OPAS. Não substitui acompanhamento profissional."
   },
   {
-    "perfil": "DEPRESSAO",
-    "tipo": "rotina",
-    "titulo": "Pequena ação possível no dia",
-    "descricao": "Sugestão educativa para escolher uma pequena tarefa possível, reduzindo a sensação de bloqueio.",
-    "palavrasChave": ["desanimado", "sem vontade", "cansado", "rotina", "energia", "triste"],
-    "nivelEvidencia": "educativo",
-    "fonte": "Base curada do projeto",
-    "referencia": "Estratégia educativa de ativação comportamental simplificada",
-    "pontuacaoBase": 7,
-    "observacao": "Uso apenas educativo e demonstrativo."
-  },
-  {
-    "perfil": "MISTO",
-    "tipo": "meditacao",
-    "titulo": "Meditação curta com foco na respiração",
-    "descricao": "Prática breve para observar a respiração e reduzir sobrecarga emocional no momento.",
-    "palavrasChave": ["preocupado", "relaxar", "triste", "ansioso", "sobrecarga", "humor", "nervoso"],
-    "nivelEvidencia": "revisao_sistematica",
-    "fonte": "Goyal et al., 2014",
-    "referencia": "Meditation Programs for Psychological Stress and Well-being",
-    "pontuacaoBase": 9,
-    "observacao": "Uso educativo e demonstrativo. Não substitui acompanhamento psicológico."
-  },
-  {
-    "perfil": "MISTO",
-    "tipo": "atividade_fisica",
-    "titulo": "Movimento leve durante o dia",
-    "descricao": "Atividade física leve, como caminhada curta, alongamento ou movimento corporal simples.",
-    "palavrasChave": ["ansioso", "triste", "energia", "humor", "tensao", "relaxar", "cansado"],
-    "nivelEvidencia": "umbrella_review",
-    "fonte": "Singh et al., 2023",
-    "referencia": "Effectiveness of physical activity interventions for improving depression, anxiety and distress",
-    "pontuacaoBase": 8,
-    "observacao": "Respeitar limites pessoais. Não realizar esforço excessivo."
-  },
-  {
-    "perfil": "MISTO",
-    "tipo": "respiracao",
-    "titulo": "Pausa de respiração e aterramento",
-    "descricao": "Pausa curta para respirar, observar o ambiente e reduzir a intensidade emocional do momento.",
-    "palavrasChave": ["preocupado", "relaxar", "ansioso", "nervoso", "tensao", "sobrecarga"],
-    "nivelEvidencia": "baseado_em_mindfulness",
-    "fonte": "Base curada do projeto",
-    "referencia": "Estratégia educativa baseada em atenção plena",
-    "pontuacaoBase": 8,
-    "observacao": "Uso educativo. Não representa intervenção clínica."
-  },
-  {
-    "perfil": "GERAL",
-    "tipo": "autocuidado",
-    "titulo": "Pausa breve de autocuidado",
-    "descricao": "Separar alguns minutos para respirar, beber água e organizar uma pequena ação possível para o dia.",
-    "palavrasChave": ["cansado", "estresse", "rotina", "preocupado", "dia", "sobrecarga"],
-    "nivelEvidencia": "educativo",
-    "fonte": "Base curada do projeto",
-    "referencia": "Conteúdo educativo não clínico",
-    "pontuacaoBase": 5,
-    "observacao": "Apoio inicial. Não substitui profissional."
+    "ativo": true,
+    "id": "sus_apoio_profissional_001",
+    "tipo": "apoio_profissional",
+    "titulo": "Preparar a busca por apoio profissional",
+    "objetivo": "Ajudar a pessoa a organizar informações básicas para procurar apoio na Rede de Atenção Psicossocial ou em outro serviço de saúde.",
+    "quandoUsar": [
+      "Quando o sofrimento estiver persistindo ou interferindo na rotina.",
+      "Quando a pessoa disser que gostaria de conversar com um profissional.",
+      "Em situações classificadas como ATENCAO, quando o protocolo permitir este conteúdo."
+    ],
+    "passos": [
+      "Anote brevemente o que você tem sentido e há quanto tempo isso acontece.",
+      "Registre situações em que o desconforto costuma aumentar ou diminuir.",
+      "Anote dúvidas que gostaria de levar para o atendimento.",
+      "Procure um serviço de saúde da sua região; a Atenção Básica é uma porta de entrada do SUS e os CAPS também realizam acolhimento conforme as necessidades da rede."
+    ],
+    "tempoEstimado": "5 a 10 minutos para organizar as informações",
+    "perfisPermitidos": [
+      "GERAL",
+      "ANSIEDADE",
+      "DEPRESSAO",
+      "MISTO"
+    ],
+    "perfisPrioritarios": [
+      "GERAL",
+      "ANSIEDADE",
+      "DEPRESSAO",
+      "MISTO"
+    ],
+    "riscosPermitidos": [
+      "BAIXO_RISCO",
+      "ATENCAO"
+    ],
+    "intencoes": [
+      "necessidade_apoio",
+      "emocao_dificil",
+      "sobrecarga"
+    ],
+    "palavrasChave": [
+      "apoio",
+      "ajuda",
+      "profissional",
+      "psicólogo",
+      "psicologo",
+      "sozinho",
+      "sozinha",
+      "conversar"
+    ],
+    "fonteInstitucional": "Ministério da Saúde",
+    "materialBase": "Rede de Atenção Psicossocial (RAPS) / Centros de Atenção Psicossocial (CAPS)",
+    "referencia": "Ministério da Saúde. Rede de Atenção Psicossocial e Centros de Atenção Psicossocial.",
+    "urlFonte": "https://www.gov.br/saude/pt-br/composicao/saes/desmad/raps/caps",
+    "nivelValidacao": "fonte_institucional_oficial_sus",
+    "prioridade": 82,
+    "observacaoEtica": "Conteúdo de orientação sobre busca de cuidado. Não realiza diagnóstico nem define qual serviço é clinicamente indicado para uma pessoa específica."
   }
 ]

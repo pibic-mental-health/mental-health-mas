@@ -143,10 +143,10 @@ public class AgenteRelatorio extends Agent {
             return "Nao foi possivel gerar relatorio simulado: dados insuficientes.";
         }
 
-        int mediaAnsiedade = somaAnsiedade / totalDias;
-        int mediaHumor = somaHumor / totalDias;
-        int mediaEnergia = somaEnergia / totalDias;
-        int mediaSono = somaSono / totalDias;
+        double mediaAnsiedade = (double) somaAnsiedade / totalDias;
+        double mediaHumor = (double) somaHumor / totalDias;
+        double mediaEnergia = (double) somaEnergia / totalDias;
+        double mediaSono = (double) somaSono / totalDias;
 
         String interpretacao;
 
@@ -162,11 +162,16 @@ public class AgenteRelatorio extends Agent {
                 + "Perfil usado na simulacao: " + perfil + "\n"
                 + "Este relatorio possui finalidade academica e demonstrativa.\n"
                 + "Nao representa avaliacao clinica, diagnostico ou acompanhamento psicologico real.\n\n"
-                + "- Media simulada de ansiedade: " + mediaAnsiedade + "\n"
-                + "- Media simulada de humor: " + mediaHumor + "\n"
-                + "- Media simulada de energia: " + mediaEnergia + "\n"
-                + "- Media simulada de sono: " + mediaSono + "\n\n"
+                + "- Media simulada de ansiedade: " + formatarMedia(mediaAnsiedade) + "\n"
+                + "- Media simulada de humor: " + formatarMedia(mediaHumor) + "\n"
+                + "- Media simulada de energia: " + formatarMedia(mediaEnergia) + "\n"
+                + "- Media simulada de sono: " + formatarMedia(mediaSono) + "\n\n"
                 + interpretacao + "\n"
                 + "Observacao: em um uso real, esta etapa dependeria de aprovacao etica e supervisao profissional.";
     }
+
+    private String formatarMedia(double valor) {
+        return String.format(java.util.Locale.ROOT, "%.2f", valor);
+    }
+
 }

@@ -267,6 +267,43 @@ public class AgenteSeguranca extends Agent {
             pontosAtencao++;
         }
 
+        /*
+         * Sinais moderados usados no fallback quando o classificador por IA
+         * estiver indisponivel.
+         *
+         * O objetivo nao e diagnosticar. Estas regras apenas distinguem,
+         * de forma conservadora, uma mensagem cotidiana de uma mensagem que
+         * apresenta varios indicios de sobrecarga emocional e necessidade de apoio.
+         */
+        if (contem(texto, "sobrecarregado")
+                || contem(texto, "sobrecarregada")
+                || contem(texto, "sobrecarga emocional")) {
+            pontosAtencao++;
+        }
+
+        if (contem(texto, "dificuldade para organizar o que estou sentindo")
+                || contem(texto, "dificuldade de organizar o que estou sentindo")
+                || contem(texto, "dificuldade para organizar meus sentimentos")
+                || contem(texto, "dificuldade de organizar meus sentimentos")) {
+            pontosAtencao++;
+        }
+
+        if (contem(texto, "preciso conversar")
+                || contem(texto, "queria conversar")
+                || contem(texto, "preciso ser ouvido")
+                || contem(texto, "preciso ser ouvida")
+                || contem(texto, "conversar com alguem poderia me ajudar")
+                || contem(texto, "conversar com alguém poderia me ajudar")) {
+            pontosAtencao++;
+        }
+
+        if (contem(texto, "dificuldade para lidar com o momento")
+                || contem(texto, "dificuldade de lidar com o momento")
+                || contem(texto, "nao estou conseguindo lidar")
+                || contem(texto, "nao consigo lidar com tudo")) {
+            pontosAtencao++;
+        }
+
         if (pontosAtencao >= 2) {
             return new ResultadoAnalise(
                     ATENCAO,

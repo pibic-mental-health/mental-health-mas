@@ -11,6 +11,25 @@
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!--
+            Modo padrao: preserva o fluxo de simulacao atual, incluindo AgentePaciente.
+            Para subir a API, use o perfil Maven "api".
+        -->
+        <jade.agents>
+            agenteTriagem:br.com.pibic.agentes.AgenteTriagemFormulario;
+            agenteIntervencao:br.com.pibic.agentes.AgenteIntervencao;
+            agenteConversacional:br.com.pibic.agentes.AgenteConversacional;
+            agentePaciente:br.com.pibic.agentes.AgentePaciente;
+            agenteMonitoramento:br.com.pibic.agentes.AgenteMonitoramento;
+            agenteRelatorio:br.com.pibic.agentes.AgenteRelatorio;
+            agenteSeguranca:br.com.pibic.agentes.AgenteSeguranca;
+            agenteMemoria:br.com.pibic.agentes.AgenteMemoria;
+            agenteConteudo:br.com.pibic.agentes.AgenteConteudo;
+            agentePsicologo:br.com.pibic.agentes.AgentePsicologo;
+            agenteLocalAtendimento:br.com.pibic.agentes.AgenteLocalAtendimento
+        </jade.agents>
     </properties>
 
     <dependencies>
@@ -27,6 +46,33 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>api</id>
+            <properties>
+                <!--
+                    Modo plataforma/API:
+                    - inicia o Gateway HTTP;
+                    - nao inicia o AgentePaciente, para evitar que o simulador
+                      gere conversas automaticamente enquanto a API esta em uso.
+                -->
+                <jade.agents>
+                    agenteGateway:br.com.pibic.agentes.AgenteGateway;
+                    agenteTriagem:br.com.pibic.agentes.AgenteTriagemFormulario;
+                    agenteIntervencao:br.com.pibic.agentes.AgenteIntervencao;
+                    agenteConversacional:br.com.pibic.agentes.AgenteConversacional;
+                    agenteMonitoramento:br.com.pibic.agentes.AgenteMonitoramento;
+                    agenteRelatorio:br.com.pibic.agentes.AgenteRelatorio;
+                    agenteSeguranca:br.com.pibic.agentes.AgenteSeguranca;
+                    agenteMemoria:br.com.pibic.agentes.AgenteMemoria;
+                    agenteConteudo:br.com.pibic.agentes.AgenteConteudo;
+                    agentePsicologo:br.com.pibic.agentes.AgentePsicologo;
+                    agenteLocalAtendimento:br.com.pibic.agentes.AgenteLocalAtendimento
+                </jade.agents>
+            </properties>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
             <plugin>
@@ -38,22 +84,9 @@
                     <mainClass>jade.Boot</mainClass>
                     <arguments>
                         <argument>-gui</argument>
-                        <argument>
-                            agenteTriagem:br.com.pibic.agentes.AgenteTriagemFormulario;
-                            agenteIntervencao:br.com.pibic.agentes.AgenteIntervencao;
-                            agenteConversacional:br.com.pibic.agentes.AgenteConversacional;
-                            agentePaciente:br.com.pibic.agentes.AgentePaciente;
-                            agenteMonitoramento:br.com.pibic.agentes.AgenteMonitoramento;
-                            agenteRelatorio:br.com.pibic.agentes.AgenteRelatorio;
-                            agenteSeguranca:br.com.pibic.agentes.AgenteSeguranca;
-                            agenteMemoria:br.com.pibic.agentes.AgenteMemoria;
-                            agenteConteudo:br.com.pibic.agentes.AgenteConteudo;
-                            agentePsicologo:br.com.pibic.agentes.AgentePsicologo;
-                            agenteLocalAtendimento:br.com.pibic.agentes.AgenteLocalAtendimento
-                        </argument>
+                        <argument>${jade.agents}</argument>
                     </arguments>
                 </configuration>
-
             </plugin>
         </plugins>
     </build>

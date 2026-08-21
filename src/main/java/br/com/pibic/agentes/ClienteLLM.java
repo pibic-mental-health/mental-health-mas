@@ -9,19 +9,25 @@ public class ClienteLLM {
 
         System.out.println("[LLM] Provedor configurado: " + provedor);
 
-        if (provedor.equals("NVIDIA_NIM")) {
+        if ("NVIDIA_NIM".equals(provedor)) {
             return ClienteNvidia.gerarResposta(prompt);
         }
 
-        if (provedor.equals("DEEPSEEK")) {
+        if ("DEEPSEEK".equals(provedor)) {
             return "Erro: Cliente DeepSeek ainda nao implementado.";
         }
 
-        if (provedor.equals("OLLAMA_LOCAL")) {
+        if ("OLLAMA_LOCAL".equals(provedor)) {
             return "Erro: Cliente Ollama local ainda nao implementado.";
         }
 
-        System.out.println("[LLM] Provedor desconhecido. Usando provedor padrao: " + PROVEDOR_PADRAO);
+        System.out.println(
+                "[LLM] Provedor desconhecido: "
+                        + provedor
+                        + ". Usando provedor padrao: "
+                        + PROVEDOR_PADRAO
+        );
+
         return ClienteNvidia.gerarResposta(prompt);
     }
 
