@@ -14,8 +14,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!--
-            Modo padrao: preserva o fluxo de simulacao atual, incluindo AgentePaciente.
-            Para subir a API, use o perfil Maven "api".
+            Modo padrão:
+            preserva o fluxo de simulação atual,
+            incluindo o AgentePaciente.
+
+            Para iniciar a plataforma com a API HTTP,
+            utilizar o perfil Maven "api".
         -->
         <jade.agents>
             agenteTriagem:br.com.pibic.agentes.AgenteTriagemFormulario;
@@ -32,14 +36,31 @@
         </jade.agents>
     </properties>
 
+    <!--
+        Repositório oficial Maven do JADE.
+        Necessário porque o artefato oficial não é distribuído
+        pelo Maven Central.
+    -->
+    <repositories>
+
+        <repository>
+            <id>tilab</id>
+            <name>JADE Maven Repository</name>
+            <url>https://jade.tilab.com/maven/</url>
+        </repository>
+
+    </repositories>
+
     <dependencies>
 
+        <!-- JADE - Java Agent DEvelopment Framework -->
         <dependency>
-            <groupId>jade</groupId>
+            <groupId>com.tilab.jade</groupId>
             <artifactId>jade</artifactId>
             <version>4.6.0</version>
         </dependency>
 
+        <!-- JSON -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
@@ -57,16 +78,19 @@
 
     <profiles>
 
+        <!--
+            Perfil para execução da plataforma integrada à API.
+
+            Diferença principal em relação ao modo padrão:
+            o AgentePaciente não é iniciado, evitando que o simulador
+            gere conversas automaticamente enquanto o aplicativo
+            utiliza a API.
+        -->
         <profile>
             <id>api</id>
 
             <properties>
-                <!--
-                    Modo plataforma/API:
-                    - inicia o Gateway HTTP;
-                    - nao inicia o AgentePaciente, para evitar que o simulador
-                      gere conversas automaticamente enquanto a API esta em uso.
-                -->
+
                 <jade.agents>
                     agenteGateway:br.com.pibic.agentes.AgenteGateway;
                     agenteTriagem:br.com.pibic.agentes.AgenteTriagemFormulario;
@@ -80,6 +104,7 @@
                     agentePsicologo:br.com.pibic.agentes.AgentePsicologo;
                     agenteLocalAtendimento:br.com.pibic.agentes.AgenteLocalAtendimento
                 </jade.agents>
+
             </properties>
 
         </profile>
@@ -90,6 +115,7 @@
 
         <plugins>
 
+            <!-- Permite iniciar diretamente o jade.Boot via Maven -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
