@@ -33,6 +33,7 @@
     </properties>
 
     <dependencies>
+
         <dependency>
             <groupId>jade</groupId>
             <artifactId>jade</artifactId>
@@ -44,11 +45,21 @@
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
         </dependency>
+
+        <!-- Driver JDBC PostgreSQL -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.13</version>
+        </dependency>
+
     </dependencies>
 
     <profiles>
+
         <profile>
             <id>api</id>
+
             <properties>
                 <!--
                     Modo plataforma/API:
@@ -70,25 +81,35 @@
                     agenteLocalAtendimento:br.com.pibic.agentes.AgenteLocalAtendimento
                 </jade.agents>
             </properties>
+
         </profile>
+
     </profiles>
 
     <build>
+
         <plugins>
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
 
                 <configuration>
+
                     <mainClass>jade.Boot</mainClass>
+
                     <arguments>
                         <argument>-gui</argument>
                         <argument>${jade.agents}</argument>
                     </arguments>
+
                 </configuration>
+
             </plugin>
+
         </plugins>
+
     </build>
 
 </project>

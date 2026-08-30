@@ -13,9 +13,20 @@ public class RegistroHistorico {
             String texto,
             LocalDateTime registradoEm) {
 
-        this.autor = autor;
-        this.texto = texto;
-        this.registradoEm = registradoEm;
+        this.autor =
+                autor == null
+                        ? ""
+                        : autor.trim();
+
+        this.texto =
+                texto == null
+                        ? ""
+                        : texto;
+
+        this.registradoEm =
+                registradoEm == null
+                        ? LocalDateTime.now()
+                        : registradoEm;
     }
 
     public String getAutor() {
@@ -27,6 +38,17 @@ public class RegistroHistorico {
     }
 
     public LocalDateTime getRegistradoEm() {
+        return registradoEm;
+    }
+
+    /*
+     * Aliases mantidos por compatibilidade/facilidade de uso.
+     */
+    public LocalDateTime getCriadoEm() {
+        return registradoEm;
+    }
+
+    public LocalDateTime getDataHora() {
         return registradoEm;
     }
 }

@@ -24,9 +24,11 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import br.com.pibic.api.ChatHistoricoResponse;
 import br.com.pibic.api.ChatRequest;
 import br.com.pibic.api.ChatResponse;
 import br.com.pibic.api.Dass21FormularioResponse;
+import br.com.pibic.api.LocalAtendimentoResponse;
 import br.com.pibic.api.TriagemRequest;
 import br.com.pibic.api.TriagemResponse;
 import br.com.pibic.api.TriagemHistoricoResponse;
@@ -42,6 +44,7 @@ public class AgenteGateway extends Agent {
     private static final long TIMEOUT_CHAT_SEGUNDOS = 75L;
     private static final long TIMEOUT_TRIAGEM_SEGUNDOS = 20L;
     private static final long TIMEOUT_HISTORICO_SEGUNDOS = 10L;
+    private static final long TIMEOUT_LOCAIS_SEGUNDOS = 90L;
 
     private final Gson gson = new Gson();
 
@@ -183,6 +186,16 @@ public class AgenteGateway extends Agent {
             );
 
             servidor.createContext(
+                    "/api/chat/historico",
+                    new ChatHistoricoHandler()
+            );
+
+            servidor.createContext(
+                    "/api/locais",
+                    new LocaisHandler()
+            );
+
+            servidor.createContext(
                     "/api/triagem",
                     new TriagemHandler()
             );
@@ -218,6 +231,19 @@ public class AgenteGateway extends Agent {
                     "[GATEWAY] Chat: POST http://localhost:"
                     + porta
                     + "/api/chat"
+            );
+
+            System.out.println(
+                    "[GATEWAY] Historico Chat: GET http://localhost:"
+                    + porta
+                    + "/api/chat/historico?usuarioId=USR001"
+            );
+
+            System.out.println(
+                    "[GATEWAY] Locais: GET http://localhost:"
+                    + porta
+                    + "/api/locais?cidade=Brasilia&uf=DF"
+                    + "&latitude=-15.78&longitude=-47.88&raioMetros=8000"
             );
 
             System.out.println(
@@ -508,6 +534,87 @@ public class AgenteGateway extends Agent {
         return "";
     }
 
+    private Double obterDoubleQueryOpcional(
+            HttpExchange exchange,
+            String nomeParametro)
+            throws IllegalArgumentException {
+
+        String valor =
+                sanitizarCampo(
+                        obterParametroQuery(
+                                exchange,
+                                nomeParametro
+                        )
+                );
+
+        if (valor.isEmpty()) {
+            return null;
+        }
+
+        try {
+            return Double.valueOf(
+                    valor.replace(
+                            ",",
+                            "."
+                    )
+            );
+
+        } catch (NumberFormatException e) {
+
+            throw new IllegalArgumentException(
+                    "O parametro "
+                    + nomeParametro
+                    + " deve ser numerico."
+            );
+        }
+    }
+
+    private int obterInteiroQuery(
+            HttpExchange exchange,
+            String nomeParametro,
+            int valorPadrao)
+            throws IllegalArgumentException {
+
+        String valor =
+                sanitizarCampo(
+                        obterParametroQuery(
+                                exchange,
+                                nomeParametro
+                        )
+                );
+
+        if (valor.isEmpty()) {
+            return valorPadrao;
+        }
+
+        try {
+            return Integer.parseInt(
+                    valor
+            );
+
+        } catch (NumberFormatException e) {
+
+            throw new IllegalArgumentException(
+                    "O parametro "
+                    + nomeParametro
+                    + " deve ser um numero inteiro."
+            );
+        }
+    }
+
+    private boolean coordenadasValidas(
+            double latitude,
+            double longitude) {
+
+        return latitude >= -90.0
+                && latitude <= 90.0
+                && longitude >= -180.0
+                && longitude <= 180.0
+                && !(latitude == 0.0
+                && longitude == 0.0);
+    }
+
+
     private class HealthHandler
             implements HttpHandler {
 
@@ -686,6 +793,377 @@ public class AgenteGateway extends Agent {
             );
         }
     }
+
+    private class ChatHistoricoHandler
+            implements HttpHandler {
+
+        @Override
+        public void handle(
+                HttpExchange exchange)
+                throws IOException {
+
+            if ("OPTIONS".equalsIgnoreCase(
+                    exchange.getRequestMethod())) {
+
+                adicionarCors(exchange);
+
+                exchange.sendResponseHeaders(
+                        204,
+                        -1
+                );
+
+                exchange.close();
+                return;
+            }
+
+            if (!"GET".equalsIgnoreCase(
+                    exchange.getRequestMethod())) {
+
+                responder(
+                        exchange,
+                        405,
+                        gson.toJson(
+                                ChatHistoricoResponse.erro(
+                                        "Metodo nao permitido."
+                                )
+                        )
+                );
+
+                return;
+            }
+
+            String usuarioId =
+                    sanitizarCampo(
+                            obterParametroQuery(
+                                    exchange,
+                                    "usuarioId"
+                            )
+                    );
+
+            if (usuarioId.isEmpty()) {
+
+                responder(
+                        exchange,
+                        400,
+                        gson.toJson(
+                                ChatHistoricoResponse.erro(
+                                        "O parametro usuarioId e obrigatorio."
+                                )
+                        )
+                );
+
+                return;
+            }
+
+            String conteudo =
+                    "tipo=consulta_historico_chat;"
+                    + "usuarioId="
+                    + usuarioId;
+
+            String conversationId =
+                    "API_CHAT_HIST_"
+                    + UUID.randomUUID()
+                    .toString();
+
+            CompletableFuture<String> future =
+                    new CompletableFuture<String>();
+
+            fila.offer(
+                    new SolicitacaoPendente(
+                            conversationId,
+                            "agenteMemoria",
+                            conteudo,
+                            future
+                    )
+            );
+
+            aguardar(
+                    exchange,
+                    conversationId,
+                    future,
+                    TIMEOUT_HISTORICO_SEGUNDOS,
+                    "O agente de memoria nao respondeu dentro do tempo esperado."
+            );
+        }
+    }
+
+
+    private class LocaisHandler
+            implements HttpHandler {
+
+        @Override
+        public void handle(
+                HttpExchange exchange)
+                throws IOException {
+
+            if ("OPTIONS".equalsIgnoreCase(
+                    exchange.getRequestMethod())) {
+
+                adicionarCors(exchange);
+
+                exchange.sendResponseHeaders(
+                        204,
+                        -1
+                );
+
+                exchange.close();
+                return;
+            }
+
+            if (!"GET".equalsIgnoreCase(
+                    exchange.getRequestMethod())) {
+
+                responder(
+                        exchange,
+                        405,
+                        gson.toJson(
+                                LocalAtendimentoResponse.erro(
+                                        "Metodo nao permitido."
+                                )
+                        )
+                );
+
+                return;
+            }
+
+            try {
+
+                String cidade =
+                        sanitizarCampo(
+                                obterParametroQuery(
+                                        exchange,
+                                        "cidade"
+                                )
+                        );
+
+                String uf =
+                        sanitizarCampo(
+                                obterParametroQuery(
+                                        exchange,
+                                        "uf"
+                                )
+                        )
+                        .toUpperCase();
+
+                Double latitude =
+                        obterDoubleQueryOpcional(
+                                exchange,
+                                "latitude"
+                        );
+
+                Double longitude =
+                        obterDoubleQueryOpcional(
+                                exchange,
+                                "longitude"
+                        );
+
+                int raioMetros =
+                        obterInteiroQuery(
+                                exchange,
+                                "raioMetros",
+                                8000
+                        );
+
+                boolean informouLatitude =
+                        latitude != null;
+
+                boolean informouLongitude =
+                        longitude != null;
+
+                if (informouLatitude
+                        != informouLongitude) {
+
+                    responder(
+                            exchange,
+                            400,
+                            gson.toJson(
+                                    LocalAtendimentoResponse.erro(
+                                            "Latitude e longitude devem ser informadas juntas."
+                                    )
+                            )
+                    );
+
+                    return;
+                }
+
+                boolean possuiCoordenadas =
+                        informouLatitude
+                        && informouLongitude;
+
+                if (possuiCoordenadas
+                        && !coordenadasValidas(
+                                latitude.doubleValue(),
+                                longitude.doubleValue()
+                        )) {
+
+                    responder(
+                            exchange,
+                            400,
+                            gson.toJson(
+                                    LocalAtendimentoResponse.erro(
+                                            "Latitude ou longitude invalida."
+                                    )
+                            )
+                    );
+
+                    return;
+                }
+
+                if (!possuiCoordenadas
+                        && (cidade.isEmpty()
+                        || uf.isEmpty())) {
+
+                    responder(
+                            exchange,
+                            400,
+                            gson.toJson(
+                                    LocalAtendimentoResponse.erro(
+                                            "Informe latitude/longitude ou cidade/uf."
+                                    )
+                            )
+                    );
+
+                    return;
+                }
+
+                if (!uf.isEmpty()
+                        && uf.length() != 2) {
+
+                    responder(
+                            exchange,
+                            400,
+                            gson.toJson(
+                                    LocalAtendimentoResponse.erro(
+                                            "O parametro uf deve possuir duas letras."
+                                    )
+                            )
+                    );
+
+                    return;
+                }
+
+                if (raioMetros < 1000
+                        || raioMetros > 30000) {
+
+                    responder(
+                            exchange,
+                            400,
+                            gson.toJson(
+                                    LocalAtendimentoResponse.erro(
+                                            "O raioMetros deve estar entre 1000 e 30000."
+                                    )
+                            )
+                    );
+
+                    return;
+                }
+
+                StringBuilder conteudo =
+                        new StringBuilder();
+
+                conteudo.append(
+                        "origem=API;"
+                );
+
+                conteudo.append(
+                        "tipo=consulta_locais_atendimento;"
+                );
+
+                conteudo.append(
+                        "formato=json;"
+                );
+
+                conteudo.append(
+                        "cidade="
+                )
+                .append(cidade)
+                .append(";");
+
+                conteudo.append(
+                        "uf="
+                )
+                .append(uf)
+                .append(";");
+
+                if (possuiCoordenadas) {
+
+                    conteudo.append(
+                            "latitude="
+                    )
+                    .append(
+                            latitude.doubleValue()
+                    )
+                    .append(";");
+
+                    conteudo.append(
+                            "longitude="
+                    )
+                    .append(
+                            longitude.doubleValue()
+                    )
+                    .append(";");
+                }
+
+                conteudo.append(
+                        "raioMetros="
+                )
+                .append(
+                        raioMetros
+                );
+
+                String conversationId =
+                        "API_LOCAIS_"
+                        + UUID.randomUUID()
+                        .toString();
+
+                CompletableFuture<String> future =
+                        new CompletableFuture<String>();
+
+                fila.offer(
+                        new SolicitacaoPendente(
+                                conversationId,
+                                "agenteLocalAtendimento",
+                                conteudo.toString(),
+                                future
+                        )
+                );
+
+                aguardar(
+                        exchange,
+                        conversationId,
+                        future,
+                        TIMEOUT_LOCAIS_SEGUNDOS,
+                        "O agente de locais de atendimento nao respondeu dentro do tempo esperado."
+                );
+
+            } catch (IllegalArgumentException e) {
+
+                responder(
+                        exchange,
+                        400,
+                        gson.toJson(
+                                LocalAtendimentoResponse.erro(
+                                        e.getMessage()
+                                )
+                        )
+                );
+
+            } catch (Exception e) {
+
+                responder(
+                        exchange,
+                        500,
+                        gson.toJson(
+                                LocalAtendimentoResponse.erro(
+                                        "Falha ao buscar locais de atendimento: "
+                                        + e.getMessage()
+                                )
+                        )
+                );
+            }
+        }
+    }
+
 
     private class ChatHandler
             implements HttpHandler {

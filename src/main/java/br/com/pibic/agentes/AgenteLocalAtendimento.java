@@ -7,244 +7,683 @@ import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import br.com.pibic.api.LocalAtendimentoResponse;
 import br.com.pibic.utils.JsonLoader;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 
-public class AgenteLocalAtendimento extends Agent {
+public class AgenteLocalAtendimento
+        extends Agent {
 
-    private static final int LIMITE_EXIBICAO = 10;
+    private static final int LIMITE_EXIBICAO =
+            10;
+
+    private static final int RAIO_PADRAO_METROS =
+            8000;
+
+    private final Gson gson =
+            new Gson();
 
     @Override
     protected void setup() {
-        System.out.println("Agente Local Atendimento iniciado: " + getLocalName());
 
-        addBehaviour(new CyclicBehaviour() {
-            @Override
-            public void action() {
-                ACLMessage mensagem = receive();
+        System.out.println(
+                "Agente Local Atendimento iniciado: "
+                + getLocalName()
+        );
 
-                if (mensagem != null) {
-                    String conteudo = mensagem.getContent();
+        addBehaviour(
+                new CyclicBehaviour() {
 
-                    String cidade = extrairValor(conteudo, "cidade");
-                    String uf = extrairValor(conteudo, "uf");
+                    @Override
+                    public void action() {
 
-                    System.out.println("\n[LOCAL_ATENDIMENTO] Requisicao recebida:");
-                    System.out.println(conteudo);
+                        ACLMessage mensagem =
+                                receive();
 
-                    String resposta = buscarLocais(cidade, uf);
+                        if (mensagem == null) {
 
-                    ACLMessage reply = mensagem.createReply();
-                    reply.setPerformative(ACLMessage.INFORM);
-                    reply.setContent(resposta);
+                            block();
+                            return;
+                        }
 
-                    send(reply);
-                } else {
-                    block();
+                        String conteudo =
+                                mensagem.getContent();
+
+                        String cidade =
+                                extrairValor(
+                                        conteudo,
+                                        "cidade"
+                                );
+
+                        String uf =
+                                extrairValor(
+                                        conteudo,
+                                        "uf"
+                                );
+
+                        double latitude =
+                                extrairDouble(
+                                        conteudo,
+                                        "latitude"
+                                );
+
+                        double longitude =
+                                extrairDouble(
+                                        conteudo,
+                                        "longitude"
+                                );
+
+                        int raioMetros =
+                                extrairInt(
+                                        conteudo,
+                                        "raioMetros",
+                                        RAIO_PADRAO_METROS
+                                );
+
+                        String formato =
+                                extrairValor(
+                                        conteudo,
+                                        "formato"
+                                );
+
+                        System.out.println(
+                                "\n[LOCAL_ATENDIMENTO] Requisicao recebida:"
+                        );
+
+                        System.out.println(
+                                conteudo
+                        );
+
+                        ResultadoBusca resultado =
+                                buscarLocais(
+                                        cidade,
+                                        uf,
+                                        latitude,
+                                        longitude,
+                                        raioMetros
+                                );
+
+                        String resposta;
+
+                        if ("json".equalsIgnoreCase(
+                                formato)) {
+
+                            resposta =
+                                    gson.toJson(
+                                            LocalAtendimentoResponse
+                                                    .sucesso(
+                                                            resultado.cidade,
+                                                            resultado.uf,
+                                                            resultado.locais
+                                                    )
+                                    );
+
+                        } else {
+
+                            resposta =
+                                    montarRespostaTexto(
+                                            resultado
+                                    );
+                        }
+
+                        ACLMessage reply =
+                                mensagem.createReply();
+
+                        reply.setPerformative(
+                                ACLMessage.INFORM
+                        );
+
+                        reply.setContent(
+                                resposta
+                        );
+
+                        send(reply);
+                    }
                 }
-            }
-        });
+        );
     }
 
-    private String buscarLocais(String cidade, String uf) {
-        if (cidade == null || cidade.trim().isEmpty()) {
-            cidade = "Brasilia";
+    private ResultadoBusca buscarLocais(
+            String cidade,
+            String uf,
+            double latitude,
+            double longitude,
+            int raioMetros) {
+
+        String cidadeBusca =
+                cidade == null
+                        ? ""
+                        : cidade.trim();
+
+        String ufBusca =
+                uf == null
+                        ? ""
+                        : uf.trim();
+
+        boolean possuiCoordenadas =
+                coordenadasValidas(
+                        latitude,
+                        longitude
+                );
+
+        /*
+         * Mantemos o comportamento historico apenas
+         * quando nenhuma localizacao foi informada.
+         */
+        if (cidadeBusca.isEmpty()
+                && ufBusca.isEmpty()
+                && !possuiCoordenadas) {
+
+            cidadeBusca =
+                    "Brasilia";
+
+            ufBusca =
+                    "DF";
         }
 
-        if (uf == null || uf.trim().isEmpty()) {
-            uf = "DF";
+        List<LocalAtendimentoResultado> todos =
+                new ArrayList<LocalAtendimentoResultado>();
+
+        /*
+         * 1. Fonte institucional primeiro.
+         */
+        if (!cidadeBusca.isEmpty()
+                && !ufBusca.isEmpty()) {
+
+            adicionarResultados(
+                    todos,
+                    ClienteCnesApi.buscarLocais(
+                            cidadeBusca,
+                            ufBusca
+                    ),
+                    "CNES / Dados Abertos SUS"
+            );
         }
 
-        List<LocalAtendimentoResultado> todos = new ArrayList<LocalAtendimentoResultado>();
+        /*
+         * 2. Base geografica aberta.
+         */
+        if (possuiCoordenadas) {
 
-        adicionarResultados(todos, ClienteGooglePlacesApi.buscarLocais(cidade, uf), "Google Places");
-        adicionarResultados(todos, ClienteOverpassApi.buscarLocais(cidade, uf), "OpenStreetMap / Overpass");
-        adicionarResultados(todos, ClienteCnesApi.buscarLocais(cidade, uf), "CNES / Dados Abertos SUS");
+            adicionarResultados(
+                    todos,
+                    ClienteOverpassApi
+                            .buscarLocaisProximos(
+                                    latitude,
+                                    longitude,
+                                    raioMetros,
+                                    cidadeBusca,
+                                    ufBusca
+                            ),
+                    "OpenStreetMap / Overpass"
+            );
+
+        } else if (!cidadeBusca.isEmpty()
+                && !ufBusca.isEmpty()) {
+
+            adicionarResultados(
+                    todos,
+                    ClienteOverpassApi
+                            .buscarLocais(
+                                    cidadeBusca,
+                                    ufBusca
+                            ),
+                    "OpenStreetMap / Overpass"
+            );
+        }
+
+        /*
+         * 3. Google permanece complementar e opcional.
+         * Sem GOOGLE_PLACES_API_KEY, o proprio cliente
+         * apenas retorna lista vazia.
+         */
+        if (!cidadeBusca.isEmpty()
+                && !ufBusca.isEmpty()) {
+
+            adicionarResultados(
+                    todos,
+                    ClienteGooglePlacesApi
+                            .buscarLocais(
+                                    cidadeBusca,
+                                    ufBusca
+                            ),
+                    "Google Places"
+            );
+        }
+
+        if (possuiCoordenadas) {
+
+            preencherDistancias(
+                    todos,
+                    latitude,
+                    longitude
+            );
+        }
 
         List<LocalAtendimentoResultado> consolidados =
-                ClassificadorLocalAtendimento.deduplicarOrdenarLimitar(todos, LIMITE_EXIBICAO);
+                ClassificadorLocalAtendimento
+                        .deduplicarOrdenarLimitar(
+                                todos,
+                                LIMITE_EXIBICAO
+                        );
 
         if (!consolidados.isEmpty()) {
-            return montarRespostaHibrida(cidade, uf, consolidados);
+
+            return new ResultadoBusca(
+                    cidadeBusca,
+                    ufBusca,
+                    consolidados
+            );
         }
 
-        System.out.println("[LOCAL_ATENDIMENTO] Nenhuma fonte externa retornou dados relevantes. Usando fallback local JSON.");
+        System.out.println(
+                "[LOCAL_ATENDIMENTO] Nenhuma fonte externa "
+                + "retornou dados relevantes. Usando fallback JSON."
+        );
 
-        return buscarLocaisFallbackJson(cidade, uf);
+        List<LocalAtendimentoResultado> fallback =
+                buscarLocaisFallbackJson(
+                        cidadeBusca,
+                        ufBusca
+                );
+
+        if (possuiCoordenadas) {
+
+            preencherDistancias(
+                    fallback,
+                    latitude,
+                    longitude
+            );
+        }
+
+        return new ResultadoBusca(
+                cidadeBusca,
+                ufBusca,
+                ClassificadorLocalAtendimento
+                        .deduplicarOrdenarLimitar(
+                                fallback,
+                                LIMITE_EXIBICAO
+                        )
+        );
+    }
+
+    private void preencherDistancias(
+            List<LocalAtendimentoResultado> locais,
+            double latitude,
+            double longitude) {
+
+        for (LocalAtendimentoResultado local : locais) {
+
+            if (local == null) {
+                continue;
+            }
+
+            if (!coordenadasValidas(
+                    local.latitude,
+                    local.longitude)) {
+
+                continue;
+            }
+
+            local.distanciaKm =
+                    ClassificadorLocalAtendimento
+                            .calcularDistanciaKm(
+                                    latitude,
+                                    longitude,
+                                    local.latitude,
+                                    local.longitude
+                            );
+        }
     }
 
     private void adicionarResultados(
             List<LocalAtendimentoResultado> destino,
             List<LocalAtendimentoResultado> origem,
-            String nomeFonte
-    ) {
-        if (origem == null || origem.isEmpty()) {
-            System.out.println("[LOCAL_ATENDIMENTO] Fonte sem resultados relevantes: " + nomeFonte);
+            String nomeFonte) {
+
+        if (origem == null
+                || origem.isEmpty()) {
+
+            System.out.println(
+                    "[LOCAL_ATENDIMENTO] Fonte sem resultados: "
+                    + nomeFonte
+            );
+
             return;
         }
 
-        System.out.println("[LOCAL_ATENDIMENTO] Fonte com resultados: " + nomeFonte + " -> " + origem.size());
+        System.out.println(
+                "[LOCAL_ATENDIMENTO] Fonte com resultados: "
+                + nomeFonte
+                + " -> "
+                + origem.size()
+        );
 
-        for (LocalAtendimentoResultado local : origem) {
-            destino.add(local);
-        }
+        destino.addAll(origem);
     }
 
-    private String montarRespostaHibrida(
-            String cidade,
-            String uf,
-            List<LocalAtendimentoResultado> locais
-    ) {
-        StringBuilder resposta = new StringBuilder();
+    private String montarRespostaTexto(
+            ResultadoBusca resultado) {
 
-        resposta.append("Locais de atendimento encontrados por estrategia hibrida:\n\n");
-        resposta.append("Cidade/UF considerada: ").append(cidade).append("/").append(uf).append("\n\n");
+        if (resultado.locais.isEmpty()) {
 
-        resposta.append("Fontes consultadas:\n");
-        resposta.append("- Google Places API, se houver chave configurada\n");
-        resposta.append("- OpenStreetMap / Overpass API\n");
-        resposta.append("- CNES / Dados Abertos SUS\n\n");
+            return "Nenhum local de atendimento foi encontrado "
+                    + "para a localizacao informada.\n\n"
+                    + "Os dados de estabelecimentos podem mudar. "
+                    + "Consulte os canais oficiais antes do deslocamento.";
+        }
 
-        resposta.append("Criterio de priorizacao:\n");
-        resposta.append("- CAPS e atencao psicossocial aparecem primeiro.\n");
-        resposta.append("- Depois aparecem psicologia, psicoterapia, psiquiatria e saude mental.\n");
-        resposta.append("- UBS e Centros de Saude aparecem como porta de entrada da rede publica.\n\n");
+        StringBuilder resposta =
+                new StringBuilder();
 
-        resposta.append("Observacao: os dados devem ser validados nos canais oficiais antes de qualquer uso real.\n");
-        resposta.append("Esta plataforma possui finalidade academica e demonstrativa, sem substituir atendimento profissional.\n\n");
+        resposta.append(
+                "Locais de atendimento encontrados:\n\n"
+        );
 
-        int limite = Math.min(LIMITE_EXIBICAO, locais.size());
+        if (!resultado.cidade.isEmpty()
+                || !resultado.uf.isEmpty()) {
 
-        for (int i = 0; i < limite; i++) {
-            LocalAtendimentoResultado local = locais.get(i);
+            resposta.append(
+                    "Cidade/UF considerada: "
+            )
+            .append(
+                    valorSeguro(
+                            resultado.cidade
+                    )
+            )
+            .append("/")
+            .append(
+                    valorSeguro(
+                            resultado.uf
+                    )
+            )
+            .append("\n\n");
+        }
 
-            resposta.append(i + 1).append(". ").append(valorSeguro(local.nome)).append("\n");
-            resposta.append("   Categoria: ").append(valorSeguro(local.categoria)).append("\n");
-            resposta.append("   Tipo: ").append(ClassificadorLocalAtendimento.obterTipoParaExibicao(local)).append("\n");
-            resposta.append("   Cidade/UF: ").append(valorSeguro(local.cidade)).append("/").append(valorSeguro(local.uf)).append("\n");
-            resposta.append("   Endereco: ").append(valorSeguro(local.endereco)).append("\n");
-            resposta.append("   Telefone: ").append(valorSeguro(local.telefone)).append("\n");
+        resposta.append(
+                "A busca prioriza CAPS e servicos especializados. "
+        );
 
-            if (local.codigoCnes != null && !local.codigoCnes.trim().isEmpty()) {
-                resposta.append("   Codigo CNES: ").append(local.codigoCnes).append("\n");
+        resposta.append(
+                "CNES e usado como fonte institucional; "
+                + "OpenStreetMap e Google Places podem complementar "
+                + "informacoes geograficas e de contato.\n\n"
+        );
+
+        resposta.append(
+                "Confirme funcionamento, endereco e contato antes "
+                + "de se deslocar.\n\n"
+        );
+
+        for (int i = 0;
+             i < resultado.locais.size();
+             i++) {
+
+            LocalAtendimentoResultado local =
+                    resultado.locais.get(i);
+
+            resposta.append(
+                    i + 1
+            )
+            .append(". ")
+            .append(
+                    valorSeguro(
+                            local.nome
+                    )
+            )
+            .append("\n");
+
+            resposta.append(
+                    "   Categoria: "
+            )
+            .append(
+                    valorSeguro(
+                            local.categoria
+                    )
+            )
+            .append("\n");
+
+            resposta.append(
+                    "   Tipo: "
+            )
+            .append(
+                    ClassificadorLocalAtendimento
+                            .obterTipoParaExibicao(
+                                    local
+                            )
+            )
+            .append("\n");
+
+            resposta.append(
+                    "   Endereco: "
+            )
+            .append(
+                    valorSeguro(
+                            local.endereco
+                    )
+            )
+            .append("\n");
+
+            resposta.append(
+                    "   Telefone: "
+            )
+            .append(
+                    valorSeguro(
+                            local.telefone
+                    )
+            )
+            .append("\n");
+
+            if (local.distanciaKm >= 0.0) {
+
+                resposta.append(
+                        "   Distancia aproximada: "
+                )
+                .append(
+                        String.format(
+                                java.util.Locale.US,
+                                "%.1f km",
+                                local.distanciaKm
+                        )
+                )
+                .append("\n");
             }
 
-            if (local.latitude != 0.0 || local.longitude != 0.0) {
-                resposta.append("   Coordenadas: ")
-                        .append(local.latitude)
-                        .append(", ")
-                        .append(local.longitude)
-                        .append("\n");
+            if (local.codigoCnes != null
+                    && !local.codigoCnes
+                    .trim()
+                    .isEmpty()) {
+
+                resposta.append(
+                        "   Codigo CNES: "
+                )
+                .append(
+                        local.codigoCnes
+                )
+                .append("\n");
             }
 
-            if (local.link != null && !local.link.trim().isEmpty()) {
-                resposta.append("   Link: ").append(local.link).append("\n");
+            if (local.link != null
+                    && !local.link
+                    .trim()
+                    .isEmpty()) {
+
+                resposta.append(
+                        "   Link: "
+                )
+                .append(
+                        local.link
+                )
+                .append("\n");
             }
 
-            resposta.append("   Prioridade da recomendacao: ").append(local.prioridade).append("\n");
-            resposta.append("   Fonte: ").append(valorSeguro(local.fonte)).append("\n");
-            resposta.append("   Observacao: ").append(valorSeguro(local.observacao)).append("\n\n");
+            resposta.append(
+                    "   Fonte: "
+            )
+            .append(
+                    valorSeguro(
+                            local.fonte
+                    )
+            )
+            .append("\n\n");
         }
 
         return resposta.toString();
     }
 
-    private String buscarLocaisFallbackJson(String cidade, String uf) {
-        List<LocalAtendimentoFallback> locais = carregarLocaisFallback();
+    private List<LocalAtendimentoResultado> buscarLocaisFallbackJson(
+            String cidade,
+            String uf) {
 
-        if (locais.isEmpty()) {
-            return "Nao foi possivel carregar locais de atendimento no momento.";
-        }
+        List<LocalAtendimentoFallback> locais =
+                carregarLocaisFallback();
 
-        List<LocalAtendimentoResultado> resultados = new ArrayList<LocalAtendimentoResultado>();
+        List<LocalAtendimentoResultado> resultados =
+                new ArrayList<LocalAtendimentoResultado>();
 
         for (LocalAtendimentoFallback local : locais) {
+
             if (local == null) {
                 continue;
             }
 
-            boolean mesmaCidade = local.cidade != null && local.cidade.equalsIgnoreCase(cidade);
-            boolean mesmoUf = local.uf != null && local.uf.equalsIgnoreCase(uf);
+            boolean mesmaCidade =
+                    cidade != null
+                    && local.cidade != null
+                    && local.cidade
+                    .equalsIgnoreCase(cidade);
 
-            if (mesmaCidade && mesmoUf) {
-                LocalAtendimentoResultado resultado = converterFallback(local);
+            boolean mesmoUf =
+                    uf != null
+                    && local.uf != null
+                    && local.uf
+                    .equalsIgnoreCase(uf);
 
-                boolean relevante = ClassificadorLocalAtendimento.classificar(resultado);
+            if (!mesmaCidade
+                    || !mesmoUf) {
 
-                if (relevante) {
-                    resultados.add(resultado);
-                }
+                continue;
+            }
+
+            LocalAtendimentoResultado resultado =
+                    converterFallback(local);
+
+            if (ClassificadorLocalAtendimento
+                    .classificar(resultado)) {
+
+                resultados.add(resultado);
             }
         }
 
-        List<LocalAtendimentoResultado> consolidados =
-                ClassificadorLocalAtendimento.deduplicarOrdenarLimitar(resultados, LIMITE_EXIBICAO);
-
-        if (consolidados.isEmpty()) {
-            return "Nenhum local encontrado para " + cidade + "/" + uf + ".\n\n"
-                    + "Observacao: em uma versao real, esta busca pode consultar Google Places, OpenStreetMap e CNES.";
-        }
-
-        return montarRespostaHibrida(cidade, uf, consolidados);
+        return resultados;
     }
 
-    private LocalAtendimentoResultado converterFallback(LocalAtendimentoFallback local) {
-        LocalAtendimentoResultado resultado = new LocalAtendimentoResultado();
+    private LocalAtendimentoResultado converterFallback(
+            LocalAtendimentoFallback local) {
 
-        resultado.nome = local.nome;
-        resultado.tipo = local.tipo;
-        resultado.descricao = local.descricao;
-        resultado.cidade = local.cidade;
-        resultado.uf = local.uf;
-        resultado.endereco = local.endereco;
-        resultado.telefone = local.telefone;
-        resultado.fonte = local.fonte;
-        resultado.observacao = local.observacao;
+        LocalAtendimentoResultado resultado =
+                new LocalAtendimentoResultado();
+
+        resultado.nome =
+                local.nome;
+
+        resultado.tipo =
+                local.tipo;
+
+        resultado.descricao =
+                local.descricao;
+
+        resultado.cidade =
+                local.cidade;
+
+        resultado.uf =
+                local.uf;
+
+        resultado.endereco =
+                local.endereco;
+
+        resultado.telefone =
+                local.telefone;
+
+        resultado.fonte =
+                local.fonte;
+
+        resultado.observacao =
+                local.observacao;
 
         return resultado;
     }
 
     private List<LocalAtendimentoFallback> carregarLocaisFallback() {
-        List<LocalAtendimentoFallback> listaVazia = new ArrayList<LocalAtendimentoFallback>();
 
-        String json = JsonLoader.load("locais_atendimento.json");
+        List<LocalAtendimentoFallback> listaVazia =
+                new ArrayList<LocalAtendimentoFallback>();
 
-        if (json == null || json.trim().isEmpty()) {
-            System.out.println("[LOCAL_ATENDIMENTO] Arquivo locais_atendimento.json nao encontrado ou vazio");
+        String json =
+                JsonLoader.load(
+                        "locais_atendimento.json"
+                );
+
+        if (json == null
+                || json.trim().isEmpty()) {
+
             return listaVazia;
         }
 
         try {
-            Gson gson = new Gson();
-            Type tipoLista = new TypeToken<List<LocalAtendimentoFallback>>() {}.getType();
 
-            List<LocalAtendimentoFallback> locais = gson.fromJson(json, tipoLista);
+            Type tipoLista =
+                    new TypeToken<List<LocalAtendimentoFallback>>() {
+                    }.getType();
 
-            if (locais == null) {
-                return listaVazia;
-            }
+            List<LocalAtendimentoFallback> locais =
+                    gson.fromJson(
+                            json,
+                            tipoLista
+                    );
 
-            return locais;
+            return locais == null
+                    ? listaVazia
+                    : locais;
 
         } catch (Exception e) {
-            System.out.println("[LOCAL_ATENDIMENTO] Erro ao ler locais_atendimento.json: " + e.getMessage());
+
+            System.out.println(
+                    "[LOCAL_ATENDIMENTO] Erro ao ler fallback: "
+                    + e.getMessage()
+            );
+
             return listaVazia;
         }
     }
 
-    private String extrairValor(String texto, String chave) {
-        if (texto == null || texto.trim().isEmpty()) {
+    private String extrairValor(
+            String texto,
+            String chave) {
+
+        if (texto == null
+                || texto.trim().isEmpty()) {
+
             return "";
         }
 
-        String[] partes = texto.split(";");
+        String[] partes =
+                texto.split(";");
 
         for (String parte : partes) {
-            String[] kv = parte.split("=", 2);
 
-            if (kv.length == 2 && kv[0].trim().equalsIgnoreCase(chave)) {
+            String[] kv =
+                    parte.split(
+                            "=",
+                            2
+                    );
+
+            if (kv.length == 2
+                    && kv[0].trim()
+                    .equalsIgnoreCase(chave)) {
+
                 return kv[1].trim();
             }
         }
@@ -252,15 +691,116 @@ public class AgenteLocalAtendimento extends Agent {
         return "";
     }
 
-    private String valorSeguro(String valor) {
-        if (valor == null || valor.trim().isEmpty()) {
+    private double extrairDouble(
+            String texto,
+            String chave) {
+
+        String valor =
+                extrairValor(
+                        texto,
+                        chave
+                );
+
+        if (valor.isEmpty()) {
+            return 0.0;
+        }
+
+        try {
+
+            return Double.parseDouble(
+                    valor.replace(
+                            ",",
+                            "."
+                    )
+            );
+
+        } catch (Exception e) {
+
+            return 0.0;
+        }
+    }
+
+    private int extrairInt(
+            String texto,
+            String chave,
+            int padrao) {
+
+        String valor =
+                extrairValor(
+                        texto,
+                        chave
+                );
+
+        if (valor.isEmpty()) {
+            return padrao;
+        }
+
+        try {
+
+            return Integer.parseInt(
+                    valor
+            );
+
+        } catch (Exception e) {
+
+            return padrao;
+        }
+    }
+
+    private boolean coordenadasValidas(
+            double latitude,
+            double longitude) {
+
+        return latitude >= -90.0
+                && latitude <= 90.0
+                && longitude >= -180.0
+                && longitude <= 180.0
+                && !(latitude == 0.0
+                && longitude == 0.0);
+    }
+
+    private String valorSeguro(
+            String valor) {
+
+        if (valor == null
+                || valor.trim().isEmpty()) {
+
             return "Nao informado";
         }
 
         return valor;
     }
 
+    private static class ResultadoBusca {
+
+        final String cidade;
+        final String uf;
+        final List<LocalAtendimentoResultado> locais;
+
+        ResultadoBusca(
+                String cidade,
+                String uf,
+                List<LocalAtendimentoResultado> locais) {
+
+            this.cidade =
+                    cidade == null
+                            ? ""
+                            : cidade;
+
+            this.uf =
+                    uf == null
+                            ? ""
+                            : uf;
+
+            this.locais =
+                    locais == null
+                            ? new ArrayList<LocalAtendimentoResultado>()
+                            : locais;
+        }
+    }
+
     private static class LocalAtendimentoFallback {
+
         String nome;
         String tipo;
         String descricao;

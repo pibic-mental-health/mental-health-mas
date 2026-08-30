@@ -3,15 +3,18 @@ package br.com.pibic.api;
 public class ChatResponse {
 
     private boolean sucesso;
+
     private String usuarioId;
     private String perfil;
     private String risco;
     private String protocolo;
     private String mensagem;
+
     private AcoesDisponiveis acoes;
+
     private String erro;
 
-    public ChatResponse() {
+    private ChatResponse() {
     }
 
     public static ChatResponse sucesso(
@@ -22,22 +25,60 @@ public class ChatResponse {
             String mensagem,
             AcoesDisponiveis acoes) {
 
-        ChatResponse resposta = new ChatResponse();
-        resposta.sucesso = true;
-        resposta.usuarioId = usuarioId;
-        resposta.perfil = perfil;
-        resposta.risco = risco;
-        resposta.protocolo = protocolo;
-        resposta.mensagem = mensagem;
-        resposta.acoes = acoes;
-        return resposta;
+        ChatResponse response =
+                new ChatResponse();
+
+        response.sucesso = true;
+
+        response.usuarioId =
+                valorSeguro(usuarioId);
+
+        response.perfil =
+                valorSeguro(perfil);
+
+        response.risco =
+                valorSeguro(risco);
+
+        response.protocolo =
+                valorSeguro(protocolo);
+
+        response.mensagem =
+                mensagem == null
+                        ? ""
+                        : mensagem;
+
+        response.acoes =
+                acoes;
+
+        response.erro =
+                null;
+
+        return response;
     }
 
-    public static ChatResponse erro(String mensagemErro) {
-        ChatResponse resposta = new ChatResponse();
-        resposta.sucesso = false;
-        resposta.erro = mensagemErro;
-        return resposta;
+    public static ChatResponse erro(
+            String mensagemErro) {
+
+        ChatResponse response =
+                new ChatResponse();
+
+        response.sucesso = false;
+
+        response.usuarioId = "";
+        response.perfil = "";
+        response.risco = "";
+        response.protocolo = "";
+        response.mensagem = "";
+
+        response.acoes =
+                null;
+
+        response.erro =
+                mensagemErro == null
+                        ? "Erro desconhecido."
+                        : mensagemErro.trim();
+
+        return response;
     }
 
     public boolean isSucesso() {
@@ -70,5 +111,13 @@ public class ChatResponse {
 
     public String getErro() {
         return erro;
+    }
+
+    private static String valorSeguro(
+            String valor) {
+
+        return valor == null
+                ? ""
+                : valor.trim();
     }
 }

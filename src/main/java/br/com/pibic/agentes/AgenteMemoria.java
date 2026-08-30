@@ -6,10 +6,13 @@ import java.util.List;
 
 import com.google.gson.Gson;
 
+import br.com.pibic.api.ChatHistoricoResponse;
 import br.com.pibic.api.TriagemHistoricoResponse;
 import br.com.pibic.memoria.MemoriaRepository;
 import br.com.pibic.memoria.MemoriaRepositoryEmMemoria;
+import br.com.pibic.memoria.MemoriaRepositoryJdbc;
 import br.com.pibic.memoria.MemoriaUsuario;
+import br.com.pibic.memoria.RegistroHistorico;
 import br.com.pibic.memoria.RegistroTriagemDass21;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
@@ -26,15 +29,11 @@ public class AgenteMemoria extends Agent {
 
     @Override
     protected void setup() {
-        repository = new MemoriaRepositoryEmMemoria();
+        repository = criarRepository();
 
         System.out.println(
                 "Agente Memoria iniciado: "
                 + getLocalName()
-        );
-
-        System.out.println(
-                "[MEMORIA] Repositorio atual: MEMORIA_LOCAL"
         );
 
         addBehaviour(new CyclicBehaviour() {
@@ -50,6 +49,61 @@ public class AgenteMemoria extends Agent {
                 processarMensagem(mensagem);
             }
         });
+    }
+
+    private MemoriaRepository criarRepository() {
+        String url =
+                System.getenv("PIBIC_DB_URL");
+
+        String usuario =
+                System.getenv("PIBIC_DB_USER");
+
+        String senha =
+                System.getenv("PIBIC_DB_PASSWORD");
+
+        boolean algumConfigurado =
+                possuiValor(url)
+                || possuiValor(usuario)
+                || possuiValor(senha);
+
+        if (!algumConfigurado) {
+            System.out.println(
+                    "[MEMORIA] Repositorio atual: MEMORIA_LOCAL"
+            );
+
+            return new MemoriaRepositoryEmMemoria();
+        }
+
+        if (!possuiValor(url)
+                || !possuiValor(usuario)
+                || !possuiValor(senha)) {
+
+            throw new IllegalStateException(
+                    "Configuracao PostgreSQL incompleta. "
+                    + "Defina PIBIC_DB_URL, PIBIC_DB_USER "
+                    + "e PIBIC_DB_PASSWORD."
+            );
+        }
+
+        MemoriaRepository repositoryJdbc =
+                new MemoriaRepositoryJdbc(
+                        url,
+                        usuario,
+                        senha
+                );
+
+        System.out.println(
+                "[MEMORIA] Repositorio atual: POSTGRESQL"
+        );
+
+        return repositoryJdbc;
+    }
+
+    private boolean possuiValor(
+            String valor) {
+
+        return valor != null
+                && !valor.trim().isEmpty();
     }
 
     private void processarMensagem(
@@ -125,6 +179,15 @@ public class AgenteMemoria extends Agent {
                 "consulta_triagens_dass21")) {
 
             responderHistoricoDass21(
+                    mensagem,
+                    memoria
+            );
+        }
+
+        else if (tipo.equalsIgnoreCase(
+                "consulta_historico_chat")) {
+
+            responderHistoricoChat(
                     mensagem,
                     memoria
             );
@@ -367,6 +430,60 @@ public class AgenteMemoria extends Agent {
                 + estresse
         );
     }
+
+    private void responderHistoricoChat(
+            ACLMessage mensagem,
+            MemoriaUsuario memoria) {
+
+        ChatHistoricoResponse respostaApi =
+                ChatHistoricoResponse.sucesso(
+                        memoria.getUsuarioId()
+                );
+
+        List<RegistroHistorico> historico =
+                memoria.getHistorico();
+
+        for (int i = 0;
+             i < historico.size();
+             i++) {
+
+            RegistroHistorico registro =
+                    historico.get(i);
+
+            respostaApi.adicionarMensagem(
+                    new ChatHistoricoResponse.Mensagem(
+                            i + 1,
+                            registro.getAutor(),
+                            registro.getTexto(),
+                            registro.getRegistradoEm()
+                                    .toString()
+                    )
+            );
+        }
+
+        ACLMessage resposta =
+                mensagem.createReply();
+
+        resposta.setPerformative(
+                ACLMessage.INFORM
+        );
+
+        resposta.setContent(
+                gson.toJson(
+                        respostaApi
+                )
+        );
+
+        send(resposta);
+
+        System.out.println(
+                "[MEMORIA] Historico do chat enviado para usuarioId="
+                + memoria.getUsuarioId()
+                + " quantidade="
+                + historico.size()
+        );
+    }
+
 
     private void responderHistoricoDass21(
             ACLMessage mensagem,

@@ -3,6 +3,8 @@ package br.com.pibic.agentes;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.UUID;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.gson.Gson;
 
@@ -15,6 +17,9 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
 public class AgenteConversacional extends Agent {
+
+    private final Map<String, Boolean> contextoLocalPendente =
+            new ConcurrentHashMap<String, Boolean>();
 
     private static final long TIMEOUT_SEGURANCA_MS = 40000L;
     private static final long TIMEOUT_INTERVENCAO_MS = 10000L;
@@ -93,9 +98,30 @@ public class AgenteConversacional extends Agent {
                     System.out.println("[CONVERSACIONAL] Mensagem do usuario: " + mensagemUsuario);
 
                     salvarNaMemoria(usuarioId, "perfil", perfil);
-                    salvarNaMemoria(usuarioId, "mensagem", mensagemUsuario);
 
-                    String risco = consultarSeguranca(mensagemUsuario);
+                    /*
+                     * Recuperamos o contexto ANTES de registrar a mensagem atual.
+                     * Assim o AgenteSeguranca recebe o histórico imediatamente
+                     * anterior e consegue interpretar respostas curtas como
+                     * "sim" sem confundir o assunto da conversa.
+                     */
+                    String memoriaContexto =
+                            consultarMemoria(
+                                    usuarioId
+                            );
+
+                    salvarNaMemoria(
+                            usuarioId,
+                            "mensagem",
+                            mensagemUsuario
+                    );
+
+                    String risco =
+                            consultarSeguranca(
+                                    mensagemUsuario,
+                                    memoriaContexto
+                            );
+
                     salvarNaMemoria(usuarioId, "risco", risco);
 
                     System.out.println("[CONVERSACIONAL] Nivel de risco: " + risco);
@@ -118,32 +144,178 @@ public class AgenteConversacional extends Agent {
 
                     String resposta;
 
+                    boolean saudacaoGenerica =
+                            ehSaudacaoGenerica(
+                                    mensagemUsuario
+                            );
+
+                    boolean encerramentoNeutro =
+                            ehAgradecimentoOuEncerramento(
+                                    mensagemUsuario
+                            );
+
+                    if (saudacaoGenerica
+                            || encerramentoNeutro) {
+                        /*
+                         * Saudacoes e encerramentos curtos iniciam um
+                         * turno neutro. Nao reutilizamos uma intencao antiga
+                         * de busca de locais apenas porque ela existe no historico.
+                         */
+                        limparContextoLocalPendente(
+                                usuarioId
+                        );
+                    }
+
+                    if (encerramentoNeutro) {
+
+                        System.out.println(
+                                "[CONVERSACIONAL] Encerramento neutro detectado. "
+                                + "Historico de locais nao sera retomado."
+                        );
+                    }
+
+                    boolean acaoLocalAtendimento =
+                            false;
+
                     if (!permitirIA || risco.equals("RISCO")) {
+
+                        acaoLocalAtendimento =
+                                permitirLocalAtendimento
+                                && deveOferecerLocalAtendimento(
+                                        usuarioId,
+                                        mensagemUsuario,
+                                        memoriaContexto
+                                );
+
                         resposta = mensagemIntervencao;
 
                         if (resposta == null || resposta.trim().isEmpty()) {
                             resposta = respostaSeguranca();
                         }
+
                     } else {
-                        String memoria = consultarMemoria(usuarioId);
-                        String prompt = montarPrompt(perfil, mensagemUsuario, risco, memoria, protocolo);
 
-                        System.out.println("[CONVERSACIONAL] Provedor de IA configurado: " + ClienteLLM.obterProvedor());
-                        resposta = ClienteLLM.gerarResposta(prompt);
-                        resposta = limparRespostaClinica(resposta);
+                        acaoLocalAtendimento =
+                                permitirLocalAtendimento
+                                && deveOferecerLocalAtendimento(
+                                        usuarioId,
+                                        mensagemUsuario,
+                                        memoriaContexto
+                                );
 
-                        if (resposta == null || resposta.trim().isEmpty() || resposta.contains("Erro")) {
-                            resposta = gerarRespostaFallback(perfil, mensagemUsuario, risco);
+                        System.out.println(
+                                "[CONVERSACIONAL] Acao localAtendimento: "
+                                + acaoLocalAtendimento
+                        );
+
+                        /*
+                         * Informacoes factuais sobre estabelecimentos de saude
+                         * NAO sao geradas pelo LLM.
+                         *
+                         * Quando a conversa indica que o usuario quer um local,
+                         * o agente apenas orienta o uso da acao estruturada.
+                         * Os nomes, enderecos, telefones, distancias e fontes
+                         * sao obtidos exclusivamente pelo AgenteLocalAtendimento.
+                         */
+                        if (acaoLocalAtendimento) {
+
+                            resposta =
+                                    gerarRespostaBuscaLocal(
+                                            mensagemUsuario
+                                    );
+
+                        } else if (saudacaoGenerica) {
+
+                            resposta =
+                                    gerarRespostaSaudacao();
+
+                        } else if (encerramentoNeutro) {
+
+                            resposta =
+                                    gerarRespostaEncerramento();
+
+                        } else {
+
+                            String prompt =
+                                    montarPrompt(
+                                            perfil,
+                                            mensagemUsuario,
+                                            risco,
+                                            memoriaContexto,
+                                            protocolo
+                                    );
+
+                            System.out.println(
+                                    "[CONVERSACIONAL] Provedor de IA configurado: "
+                                    + ClienteLLM.obterProvedor()
+                            );
+
+                            resposta =
+                                    ClienteLLM.gerarResposta(
+                                            prompt
+                                    );
+
+                            resposta =
+                                    limparRespostaClinica(
+                                            resposta
+                                    );
+
+                            if (resposta == null
+                                    || resposta.trim().isEmpty()
+                                    || resposta.contains("Erro")) {
+
+                                resposta =
+                                        gerarRespostaFallback(
+                                                perfil,
+                                                mensagemUsuario,
+                                                risco
+                                        );
+                            }
+
+                            /*
+                             * Se o próprio LLM ofereceu a busca de locais,
+                             * guardamos essa intenção para interpretar uma
+                             * resposta curta como "sim" no próximo turno.
+                             *
+                             * Isso NÃO libera dados factuais pelo LLM.
+                             * Apenas preserva o estado conversacional.
+                             */
+                            if (!encerramentoNeutro
+                                    && permitirLocalAtendimento
+                                    && respostaOfereceBuscaLocal(
+                                            resposta
+                                    )) {
+
+                                marcarContextoLocalPendente(
+                                        usuarioId
+                                );
+
+                                System.out.println(
+                                        "[CONVERSACIONAL] Oferta de busca de local detectada na resposta. "
+                                        + "Contexto pendente marcado para usuarioId="
+                                        + usuarioId
+                                );
+                            }
                         }
 
                         if (mensagemIntervencao != null
                                 && !mensagemIntervencao.trim().isEmpty()
                                 && risco.equals("ATENCAO")) {
-                            resposta += "\n\n" + mensagemIntervencao;
+
+                            resposta +=
+                                    "\n\n"
+                                    + mensagemIntervencao;
                         }
                     }
 
-                    resposta += "\n\nImportante: esta plataforma realiza apenas apoio inicial e triagem emocional. Ela nao substitui acompanhamento psicologico profissional.";
+                    if (!saudacaoGenerica
+                            && !encerramentoNeutro) {
+
+                        resposta =
+                                garantirAvisoPlataforma(
+                                        resposta
+                                );
+                    }
 
                     resposta += montarBlocoApoioCVV(exibirBotaoCVV, telefoneCVV, risco, protocolo);
 
@@ -195,7 +367,7 @@ public class AgenteConversacional extends Agent {
                         AcoesDisponiveis acoes = new AcoesDisponiveis(
                                 permitirConteudo,
                                 acaoPsicologo,
-                                permitirLocalAtendimento,
+                                acaoLocalAtendimento,
                                 permitirMonitoramento,
                                 exibirBotaoCVV,
                                 exibirBotaoCVV
@@ -421,6 +593,8 @@ public class AgenteConversacional extends Agent {
                 + "Regras obrigatorias:\n"
                 + "- Use o nome do usuario se estiver disponivel.\n"
                 + "- Seja acolhedor, simples, breve e humano.\n"
+                + "- Responda prioritariamente a mensagem atual. Use o historico apenas para entender continuacoes.\n"
+                + "- Se a mensagem atual for apenas uma saudacao como oi, ola ou bom dia, trate como um novo turno neutro e nao retome por conta propria pedidos antigos sobre locais, CAPS ou outros assuntos.\n"
                 + "- Nao afirme diagnosticos.\n"
                 + "- Nao diga que o usuario possui transtorno, doenca ou condicao clinica.\n"
                 + "- Nao diga que esta tratando o usuario.\n"
@@ -430,9 +604,596 @@ public class AgenteConversacional extends Agent {
                 + "- Prefira termos como sinais, momento de estresse, sobrecarga emocional, preocupacao, desconforto e apoio inicial.\n"
                 + "- Reforce que a plataforma nao substitui acompanhamento psicologico profissional.\n"
                 + "- Quando fizer sentido, incentive a busca por apoio profissional.\n"
+                + "- NUNCA invente nomes de CAPS, UBS, clinicas, hospitais, profissionais ou outros estabelecimentos.\n"
+                + "- NUNCA invente ou forneca por memoria do modelo endereco, telefone, horario, distancia ou disponibilidade de um estabelecimento.\n"
+                + "- NUNCA afirme que um atendimento e gratuito sem que essa informacao tenha sido obtida por uma fonte estruturada do sistema.\n"
+                + "- Se o usuario pedir um local de atendimento, endereco, telefone ou horario, diga que o aplicativo pode consultar locais reais pela funcao de locais proximos.\n"
+                + "- Os dados factuais de locais devem vir exclusivamente do AgenteLocalAtendimento, nunca do conhecimento interno do modelo.\n"
                 + "- Nao coloque a resposta inteira entre aspas.\n\n"
                 + "Responda em portugues do Brasil com no maximo 150 palavras.";
     }
+
+    private boolean deveOferecerLocalAtendimento(
+            String usuarioId,
+            String mensagemUsuario,
+            String memoria) {
+
+        String atual =
+                normalizarTextoIntencao(
+                        mensagemUsuario
+                );
+
+        String contexto =
+                normalizarTextoIntencao(
+                        recortarContextoRecente(
+                                memoria,
+                                1800
+                        )
+                );
+
+        boolean pedidoDireto =
+                possuiIntencaoLocal(atual)
+                || possuiPedidoBuscaGeografica(atual);
+
+        if (pedidoDireto) {
+
+            /*
+             * O pedido atual ja e suficiente para liberar a acao.
+             * Nao deixamos a intencao pendente depois disso, para
+             * evitar que um "ok" futuro mostre o mesmo card de novo.
+             */
+            limparContextoLocalPendente(
+                    usuarioId
+            );
+
+            return true;
+        }
+
+        boolean continuacaoCurta =
+                atual.equals("sim")
+                || atual.equals("pode")
+                || atual.equals("pode sim")
+                || atual.equals("claro")
+                || atual.equals("ok")
+                || atual.equals("manda")
+                || atual.equals("pode mandar")
+                || atual.equals("procure")
+                || atual.equals("procurar")
+                || atual.equals("pode procurar")
+                || atual.equals("busque")
+                || atual.equals("buscar")
+                || atual.equals("pode buscar")
+                || atual.equals("pesquise")
+                || atual.equals("pode pesquisar")
+                || atual.equals("consulte")
+                || atual.equals("pode consultar")
+                || atual.equals("de todos")
+                || atual.equals("todos")
+                || atual.matches(
+                        ".*\\b(df|sp|rj|mg|go|ba|to|sc|pr|rs|pe|ce|pa|am|es|mt|ms|ma|pb|rn|al|se|pi|ro|ac|rr|ap)\\b.*"
+                );
+
+        boolean contextoPendente =
+                possuiContextoLocalPendente(
+                        usuarioId
+                );
+
+        System.out.println(
+                "[CONVERSACIONAL] Contexto local pendente: "
+                + contextoPendente
+        );
+
+        /*
+         * Para respostas curtas, nao basta existir alguma mencao
+         * antiga a locais na memoria. A continuacao so vale quando:
+         *
+         * 1. ha uma oferta de busca pendente marcada pelo agente; ou
+         * 2. o trecho recente contem uma oferta explicita do assistente.
+         *
+         * Isso impede que "ok" continue reabrindo o card indefinidamente.
+         */
+        boolean contextoOfereceuBusca =
+                respostaOfereceBuscaLocal(
+                        contexto
+                );
+
+        if (continuacaoCurta
+                && (contextoPendente
+                || contextoOfereceuBusca)) {
+
+            limparContextoLocalPendente(
+                    usuarioId
+            );
+
+            return true;
+        }
+
+        if (!atual.isEmpty()
+                && !continuacaoCurta
+                && atual.length() > 8) {
+
+            limparContextoLocalPendente(
+                    usuarioId
+            );
+        }
+
+        return false;
+    }
+
+    private boolean possuiPedidoBuscaGeografica(
+            String texto) {
+
+        if (texto == null
+                || texto.trim().isEmpty()) {
+
+            return false;
+        }
+
+        String valor =
+                texto.trim();
+
+        return valor.contains("verificar em ")
+                || valor.contains("verifique em ")
+                || valor.contains("verificar locais em ")
+                || valor.contains("verificar os locais em ")
+                || valor.contains("verifique locais em ")
+                || valor.contains("verifique os locais em ")
+                || valor.contains("procurar em ")
+                || valor.contains("procure em ")
+                || valor.contains("procurar locais em ")
+                || valor.contains("procurar os locais em ")
+                || valor.contains("procure locais em ")
+                || valor.contains("procure os locais em ")
+                || valor.contains("buscar em ")
+                || valor.contains("busque em ")
+                || valor.contains("buscar locais em ")
+                || valor.contains("buscar os locais em ")
+                || valor.contains("busque locais em ")
+                || valor.contains("busque os locais em ")
+                || valor.contains("pesquisar em ")
+                || valor.contains("pesquise em ")
+                || valor.contains("consultar em ")
+                || valor.contains("consulte em ")
+                || valor.contains("consultar locais em ")
+                || valor.contains("consultar os locais em ")
+                || valor.contains("consulte locais em ")
+                || valor.contains("consulte os locais em ")
+                || valor.contains("atendimento em ")
+                || valor.contains("psicologo em ")
+                || valor.contains("psicologa em ")
+                || valor.contains("psiquiatra em ")
+                || valor.contains("caps em ")
+                || valor.contains("ubs em ");
+    }
+
+    private void marcarContextoLocalPendente(
+            String usuarioId) {
+
+        if (usuarioId == null
+                || usuarioId.trim().isEmpty()) {
+
+            return;
+        }
+
+        contextoLocalPendente.put(
+                usuarioId.trim(),
+                Boolean.TRUE
+        );
+    }
+
+    private boolean possuiContextoLocalPendente(
+            String usuarioId) {
+
+        if (usuarioId == null
+                || usuarioId.trim().isEmpty()) {
+
+            return false;
+        }
+
+        Boolean valor =
+                contextoLocalPendente.get(
+                        usuarioId.trim()
+                );
+
+        return Boolean.TRUE.equals(
+                valor
+        );
+    }
+
+    private void limparContextoLocalPendente(
+            String usuarioId) {
+
+        if (usuarioId == null
+                || usuarioId.trim().isEmpty()) {
+
+            return;
+        }
+
+        contextoLocalPendente.remove(
+                usuarioId.trim()
+        );
+    }
+
+    private boolean possuiIntencaoLocal(
+            String texto) {
+
+        if (texto == null
+                || texto.trim().isEmpty()) {
+
+            return false;
+        }
+
+        String valor =
+                texto.trim();
+
+        if (valor.equals("local")
+                || valor.equals("loc")) {
+
+            return true;
+        }
+
+        /*
+         * Detector composicional para frases naturais.
+         *
+         * Exemplos que agora devem funcionar:
+         * - "precisava saber de alguns locais que possuem atendimentos em Ceilandia"
+         * - "locais em Ceilandia"
+         * - "quero alguns locais para atendimento"
+         */
+        boolean mencionaLocal =
+                valor.matches(
+                        ".*\\blocais?\\b.*"
+                );
+
+        boolean mencionaAtendimento =
+                valor.contains("atendimento")
+                || valor.contains("atendimentos")
+                || valor.contains("servico")
+                || valor.contains("servicos")
+                || valor.contains("saude mental")
+                || valor.contains("apoio emocional")
+                || valor.contains("caps")
+                || valor.contains("ubs")
+                || valor.contains("psicologo")
+                || valor.contains("psicologa")
+                || valor.contains("psiquiatra");
+
+        boolean mencionaBusca =
+                valor.contains("preciso")
+                || valor.contains("precisava")
+                || valor.contains("queria")
+                || valor.contains("quero")
+                || valor.contains("gostaria")
+                || valor.contains("saber")
+                || valor.contains("conhecer")
+                || valor.contains("encontrar")
+                || valor.contains("mostrar")
+                || valor.contains("mostre")
+                || valor.contains("retornar")
+                || valor.contains("mande")
+                || valor.contains("manda")
+                || valor.contains("buscar")
+                || valor.contains("busque")
+                || valor.contains("procurar")
+                || valor.contains("procure")
+                || valor.contains("verificar")
+                || valor.contains("verifique")
+                || valor.contains("consultar")
+                || valor.contains("consulte");
+
+        boolean localComRegiao =
+                valor.matches(
+                        ".*\\blocais?\\s+(?:de\\s+atendimento\\s+)?em\\s+.+"
+                );
+
+        if (mencionaLocal
+                && (mencionaAtendimento
+                || mencionaBusca
+                || localComRegiao)) {
+
+            return true;
+        }
+
+        return valor.contains("local de atendimento")
+                || valor.contains("locais de atendimento")
+                || valor.contains("local proximo")
+                || valor.contains("locais proximos")
+                || valor.contains("mande os locais")
+                || valor.contains("manda os locais")
+                || valor.contains("me mande os locais")
+                || valor.contains("mostrar os locais")
+                || valor.contains("mostre os locais")
+                || valor.contains("ver os locais")
+                || valor.contains("quero os locais")
+                || valor.contains("quero ver locais")
+                || valor.contains("buscar locais")
+                || valor.contains("buscar os locais")
+                || valor.contains("busque locais")
+                || valor.contains("busque os locais")
+                || valor.contains("procurar locais")
+                || valor.contains("procurar os locais")
+                || valor.contains("procure locais")
+                || valor.contains("procure os locais")
+                || valor.contains("consultar locais")
+                || valor.contains("consultar os locais")
+                || valor.contains("consulte locais")
+                || valor.contains("consulte os locais")
+                || valor.contains("verificar locais")
+                || valor.contains("verificar os locais")
+                || valor.contains("verifique locais")
+                || valor.contains("verifique os locais")
+                || valor.contains("perto de mim")
+                || valor.contains("onde posso")
+                || valor.contains("onde encontro")
+                || valor.contains("onde procurar")
+                || valor.contains("atendimento gratuito")
+                || valor.contains("atendimento de graca")
+                || valor.contains("servico gratuito")
+                || valor.contains("servico de saude mental")
+                || valor.contains("caps")
+                || valor.contains("ubs")
+                || valor.contains("centro de atencao psicossocial")
+                || valor.contains("endereco")
+                || valor.contains("telefone")
+                || valor.contains("telefones")
+                || valor.contains("contato")
+                || valor.contains("contatos")
+                || valor.contains("horario")
+                || valor.contains("psicologo perto")
+                || valor.contains("psicologa perto")
+                || valor.contains("psiquiatra perto")
+                || valor.contains("pode mandar a loc")
+                || valor.contains("manda a loc");
+    }
+
+    private boolean ehSaudacaoGenerica(
+            String mensagemUsuario) {
+
+        String texto =
+                normalizarTextoIntencao(
+                        mensagemUsuario
+                );
+
+        return texto.equals("oi")
+                || texto.equals("ola")
+                || texto.equals("oie")
+                || texto.equals("bom dia")
+                || texto.equals("boa tarde")
+                || texto.equals("boa noite")
+                || texto.equals("e ai")
+                || texto.equals("eai");
+    }
+
+    private String gerarRespostaSaudacao() {
+
+        return "Ola! Estou aqui para conversar com voce. "
+                + "Como voce esta se sentindo hoje?";
+    }
+
+    private boolean ehAgradecimentoOuEncerramento(
+            String mensagemUsuario) {
+
+        String texto =
+                normalizarTextoIntencao(
+                        mensagemUsuario
+                );
+
+        return texto.equals("obrigado")
+                || texto.equals("obrigada")
+                || texto.equals("muito obrigado")
+                || texto.equals("muito obrigada")
+                || texto.equals("valeu")
+                || texto.equals("vlw")
+                || texto.equals("agradeco")
+                || texto.equals("agradecido")
+                || texto.equals("agradecida")
+                || texto.equals("entendi obrigado")
+                || texto.equals("entendi obrigada")
+                || texto.equals("beleza obrigado")
+                || texto.equals("beleza obrigada")
+                || texto.equals("ta bom obrigado")
+                || texto.equals("ta bom obrigada");
+    }
+
+    private String gerarRespostaEncerramento() {
+
+        return "Por nada! Se quiser continuar a conversa ou precisar de outro apoio, estou por aqui.";
+    }
+
+
+    private String gerarRespostaBuscaLocal(
+            String mensagemUsuario) {
+
+        String texto =
+                normalizarTextoIntencao(
+                        mensagemUsuario
+                );
+
+        StringBuilder resposta =
+                new StringBuilder();
+
+        boolean pediuContato =
+                texto.contains("telefone")
+                || texto.contains("telefones")
+                || texto.contains("contato")
+                || texto.contains("contatos");
+
+        if (pediuContato) {
+
+            resposta.append(
+                    "Os contatos disponiveis aparecem junto aos locais consultados. "
+            );
+
+            resposta.append(
+                    "Toque em \\\"Ver locais proximos\\\" abaixo. "
+                    + "Quando a fonte informar um telefone, o aplicativo exibira o numero e a opcao de ligar. "
+                    + "Se a fonte nao trouxer esse dado, o sistema nao vai inventar um contato."
+            );
+
+        } else {
+
+            resposta.append(
+                    "Certo. A busca de locais reais de atendimento esta disponivel abaixo. "
+            );
+
+            resposta.append(
+                    "Toque em \\\"Ver locais proximos\\\" para consultar as opcoes. "
+                    + "Os nomes, enderecos, telefones, distancias e fontes serao obtidos pelas fontes conectadas ao sistema."
+            );
+        }
+
+        if (texto.contains("gratuito")
+                || texto.contains("de graca")) {
+
+            resposta.append(
+                    " Quando a forma de acesso ou gratuidade nao estiver confirmada pela fonte, o aplicativo vai orientar que essa informacao seja confirmada diretamente com o servico."
+            );
+        }
+
+        return resposta.toString();
+    }
+
+    private String recortarContextoRecente(
+            String contexto,
+            int limiteCaracteres) {
+
+        if (contexto == null) {
+            return "";
+        }
+
+        String valor =
+                contexto.trim();
+
+        if (limiteCaracteres <= 0
+                || valor.length() <= limiteCaracteres) {
+
+            return valor;
+        }
+
+        return valor.substring(
+                valor.length() - limiteCaracteres
+        );
+    }
+
+
+    private String normalizarTextoIntencao(
+            String texto) {
+
+        if (texto == null) {
+            return "";
+        }
+
+        String valor =
+                java.text.Normalizer.normalize(
+                        texto,
+                        java.text.Normalizer.Form.NFD
+                );
+
+        valor =
+                valor.replaceAll(
+                        "[\\p{InCombiningDiacriticalMarks}]",
+                        ""
+                );
+
+        valor =
+                valor.toLowerCase()
+                        .replace("\r", " ")
+                        .replace("\n", " ")
+                        .trim();
+
+        while (valor.contains("  ")) {
+            valor =
+                    valor.replace(
+                            "  ",
+                            " "
+                    );
+        }
+
+        return valor;
+    }
+
+
+    private boolean respostaOfereceBuscaLocal(
+            String resposta) {
+
+        String texto =
+                normalizarTextoIntencao(
+                        resposta
+                );
+
+        if (texto.isEmpty()) {
+            return false;
+        }
+
+        boolean mencionaRecurso =
+                texto.contains("locais proximos")
+                || texto.contains("locais de atendimento")
+                || texto.contains("consultar locais")
+                || texto.contains("buscar locais")
+                || texto.contains("funcao de locais proximos")
+                || texto.contains("servicos de apoio emocional em")
+                || texto.contains("servicos de saude mental em");
+
+        boolean ofereceAcao =
+                texto.contains("deseja que eu faca")
+                || texto.contains("quer que eu")
+                || texto.contains("posso consultar agora")
+                || texto.contains("posso buscar agora")
+                || texto.contains("posso procurar agora")
+                || texto.contains("posso verificar agora");
+
+        return mencionaRecurso
+                && ofereceAcao;
+    }
+
+    private String garantirAvisoPlataforma(
+            String resposta) {
+
+        String aviso =
+                "Importante: esta plataforma realiza apenas apoio inicial e triagem emocional. "
+                + "Ela nao substitui acompanhamento psicologico profissional.";
+
+        if (resposta == null
+                || resposta.trim().isEmpty()) {
+
+            return aviso;
+        }
+
+        String normalizado =
+                normalizarTextoIntencao(
+                        resposta
+                );
+
+        boolean jaPossuiAviso =
+                normalizado.contains(
+                        "esta plataforma realiza apenas apoio inicial e triagem emocional"
+                )
+                || (
+                        normalizado.contains(
+                                "nao substitui"
+                        )
+                        && normalizado.contains(
+                                "acompanhamento psicologico"
+                        )
+                )
+                || (
+                        normalizado.contains(
+                                "apoio inicial"
+                        )
+                        && normalizado.contains(
+                                "nao substitui"
+                        )
+                );
+
+        if (jaPossuiAviso) {
+            return resposta.trim();
+        }
+
+        return resposta.trim()
+                + "\n\n"
+                + aviso;
+    }
+
 
     private String respostaSeguranca() {
         return "Sinto muito que voce esteja passando por um momento tao dificil.\n"
@@ -739,33 +1500,78 @@ public class AgenteConversacional extends Agent {
         send(msg);
     }
 
-    private String consultarSeguranca(String mensagemUsuario) {
-        String conversationId = criarConversationId("SEGURANCA");
+    private String consultarSeguranca(
+            String mensagemUsuario,
+            String memoriaContexto) {
 
-        ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
-        msg.addReceiver(new AID("agenteSeguranca", AID.ISLOCALNAME));
-        msg.setConversationId(conversationId);
-        msg.setReplyWith(conversationId);
-        msg.setContent(mensagemUsuario);
+        String conversationId =
+                criarConversationId(
+                        "SEGURANCA"
+                );
+
+        ACLMessage msg =
+                new ACLMessage(
+                        ACLMessage.REQUEST
+                );
+
+        msg.addReceiver(
+                new AID(
+                        "agenteSeguranca",
+                        AID.ISLOCALNAME
+                )
+        );
+
+        msg.setConversationId(
+                conversationId
+        );
+
+        msg.setReplyWith(
+                conversationId
+        );
+
+        String mensagemBase64 =
+                Base64.getEncoder()
+                        .encodeToString(
+                                valorSeguroAcl(
+                                        mensagemUsuario
+                                )
+                                .getBytes(
+                                        StandardCharsets.UTF_8
+                                )
+                        );
+
+        String contextoBase64 =
+                Base64.getEncoder()
+                        .encodeToString(
+                                valorSeguroAcl(
+                                        memoriaContexto
+                                )
+                                .getBytes(
+                                        StandardCharsets.UTF_8
+                                )
+                        );
+
+        msg.setContent(
+                "formato=CONTEXTO_V1;"
+                + "mensagemBase64="
+                + mensagemBase64
+                + ";contextoBase64="
+                + contextoBase64
+        );
 
         send(msg);
 
-        ACLMessage resposta = aguardarResposta(
-                "agenteSeguranca",
-                conversationId,
-                TIMEOUT_SEGURANCA_MS
-        );
+        ACLMessage resposta =
+                aguardarResposta(
+                        "agenteSeguranca",
+                        conversationId,
+                        TIMEOUT_SEGURANCA_MS
+                );
 
         if (resposta != null) {
             return resposta.getContent();
         }
 
-        /*
-         * Falha segura:
-         * se o agente de seguranca nao responder, nao assumimos BAIXO_RISCO.
-         * O fluxo segue como ATENCAO para evitar liberar automaticamente
-         * monitoramento ou minimizar uma situacao desconhecida.
-         */
         System.out.println(
                 "[CONVERSACIONAL] Timeout ao consultar AgenteSeguranca. "
                 + "Usando ATENCAO como contingencia conservadora. conversationId="

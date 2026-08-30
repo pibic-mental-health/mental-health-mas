@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PIBIC • Protótipo V2</title>
+<style>
+:root {
+  --bg:#f7f4ff; --card:#fff; --text:#24133f; --muted:#776a8f;
+  --purple:#7c3aed; --purple2:#9b5de5; --purple3:#5b21b6;
+  --soft:#f1eafe; --soft2:#eadcff; --line:#e8def7;
+  --ok:#17885c; --warn:#b26a00; --danger:#b4233e;
+  --shadow:0 16px 38px rgba(91,33,182,.13);
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 15% 10%,#ede3ff 0,#f7f4ff 32%,#fbf9ff 72%);font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--text);min-height:100vh}
+.shell{max-width:1180px;margin:0 auto;padding:24px;display:grid;grid-template-columns:320px 1fr;gap:24px}
+.sidebar{background:rgba(255,255,255,.9);backdrop-filter:blur(14px);border:1px solid #ffffffc0;border-radius:26px;padding:22px;box-shadow:var(--shadow);height:calc(100vh - 48px);position:sticky;top:24px;overflow:auto}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.logo{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,var(--purple3),var(--purple2));display:grid;place-items:center;color:#fff;font-weight:900;font-size:20px;box-shadow:0 9px 24px rgba(124,58,237,.28)}
+.brand h1{font-size:18px;margin:0} .brand p{margin:3px 0 0;color:var(--muted);font-size:12px}
+.navbtn{width:100%;border:0;background:transparent;padding:11px 13px;border-radius:13px;text-align:left;font-size:13px;color:#544663;cursor:pointer;margin:2px 0}
+.navbtn:hover,.navbtn.active{background:linear-gradient(90deg,#f3edff,#eadcff);color:var(--purple3);font-weight:800}
+.note{margin-top:18px;padding:14px;background:#faf8ff;border:1px solid var(--line);border-radius:14px;font-size:12px;line-height:1.45;color:var(--muted)}
+.stage{display:flex;justify-content:center;align-items:flex-start;padding:6px 0 40px}
+.phone{width:390px;min-height:820px;background:#fff;border-radius:35px;border:8px solid #1e152a;box-shadow:0 28px 70px rgba(46,20,74,.28);overflow:hidden;position:relative}
+.status{height:30px;background:#fff;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-size:11px;font-weight:700}
+.screen{display:none;min-height:790px;background:linear-gradient(180deg,#fbf9ff,#f7f3ff 62%,#f9f7ff);padding:18px 18px 94px;overflow:auto}
+.screen.active{display:block}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.eyebrow{font-size:11px;color:var(--purple);font-weight:900;text-transform:uppercase;letter-spacing:.09em}
+h2{margin:4px 0 5px;font-size:24px} h3{margin:0 0 8px;font-size:17px}
+.sub{color:var(--muted);font-size:13px;line-height:1.5;margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;margin:12px 0;box-shadow:0 8px 22px rgba(92,48,128,.05)}
+.hero{background:linear-gradient(135deg,var(--purple3),var(--purple),var(--purple2));color:#fff;border:0}
+.hero .sub{color:#f2eaff}
+.metric{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.metric .value{font-size:28px;font-weight:900}
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:800;background:#ede9fe;color:#6d28d9}
+.badge.ok{background:#eafff6;color:var(--ok)}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:13px 14px;margin-top:10px;font-weight:900;cursor:pointer;font-size:14px}
+.primary{background:linear-gradient(135deg,var(--purple3),var(--purple));color:#fff;box-shadow:0 8px 18px rgba(124,58,237,.23)} 
+.secondary{background:var(--soft);color:var(--purple3)} 
+.ghost{background:#fff;border:1px solid var(--line);color:#4a385e}
+.danger{background:#fff1f3;color:var(--danger);border:1px solid #fecdd3}
+.option{display:flex;gap:11px;align-items:center;background:#fff;border:1px solid var(--line);padding:13px;border-radius:14px;margin:8px 0;cursor:pointer}
+.option:hover{border-color:#c7a9f4;background:#fcfaff}
+.option .ico{font-size:20px;width:28px;text-align:center} .option strong{font-size:13px} .option span{font-size:11px;color:var(--muted);display:block;margin-top:2px}
+.progress{height:7px;background:#eee8f8;border-radius:999px;overflow:hidden;margin:12px 0 18px} .progress>div{height:100%;background:linear-gradient(90deg,var(--purple3),var(--purple2))}
+.dass-option{border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px;margin:8px 0;cursor:pointer;font-size:12px;line-height:1.4}
+.dass-option.selected{border-color:var(--purple);background:var(--soft);color:var(--purple3);font-weight:800}
+.chat{display:flex;flex-direction:column;gap:10px}
+.bubble{max-width:84%;padding:11px 13px;border-radius:16px;font-size:13px;line-height:1.45}
+.bot{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:5px}
+.user{align-self:flex-end;background:linear-gradient(135deg,var(--purple3),var(--purple));color:#fff;border-bottom-right-radius:5px}
+.quick{display:flex;flex-wrap:wrap;gap:7px;margin-top:7px}
+.chip{border:1px solid #d8c5f5;background:#fff;color:var(--purple3);border-radius:999px;padding:8px 10px;font-size:11px;cursor:pointer}
+.timeline{border-left:2px solid #decdf6;margin-left:8px;padding-left:16px}
+.event{position:relative;margin:0 0 15px} .event:before{content:"";position:absolute;left:-22px;top:4px;width:10px;height:10px;background:var(--purple);border-radius:50%;box-shadow:0 0 0 4px #f1eafe}
+.small{font-size:11px;color:var(--muted)} .big{font-size:18px;font-weight:900}
+.bottom{position:absolute;left:0;right:0;bottom:0;height:72px;background:rgba(255,255,255,.97);border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:center;padding:4px 8px}
+.tab{border:0;background:transparent;color:#78698b;font-size:10px;cursor:pointer;text-align:center;width:74px} .tab b{display:block;font-size:19px;margin-bottom:3px} .tab.active{color:var(--purple);font-weight:900}
+.alertbox{background:#fff7e9;border:1px solid #fed7aa;color:#8a4d00;border-radius:16px;padding:14px;font-size:12px;line-height:1.45}
+.support{background:#f5efff;border:1px solid #d9c3ff}
+.input{width:100%;border:1px solid var(--line);background:#fff;border-radius:13px;padding:12px 13px;outline:none;font-size:13px;color:var(--text);margin-top:7px}
+.input:focus{border-color:#b084ee;box-shadow:0 0 0 3px #efe6ff}
+.label{font-size:11px;color:var(--muted);font-weight:800;display:block;margin-top:10px}
+.slider{width:100%}
+.footerhint{text-align:center;font-size:10px;color:#a494b7;margin-top:16px}
+.safety{background:linear-gradient(135deg,#fff1f4,#fff8fa);border:1px solid #fecdd3}
+.call{text-decoration:none;display:block;text-align:center}
+.divider{height:1px;background:var(--line);margin:14px 0}
+@media(max-width:820px){.shell{grid-template-columns:1fr;padding:0}.sidebar{display:none}.stage{padding:0}.phone{width:min(100%,390px);border-width:0;border-radius:0;min-height:100vh;box-shadow:none}body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">P</div><div><h1>PIBIC • Protótipo V2</h1><p>Triagem + chat + contexto fisiológico</p></div></div>
+    <button class="navbtn active" onclick="go('welcome',this)">1. Boas-vindas</button>
+    <button class="navbtn" onclick="go('account',this)">2. Cadastro / login</button>
+    <button class="navbtn" onclick="go('dass',this)">3. Triagem DASS-21</button>
+    <button class="navbtn" onclick="go('home',this)">4. Home</button>
+    <button class="navbtn" onclick="go('chat',this)">5. Chat personalizado</button>
+    <button class="navbtn" onclick="go('context',this)">6. Checagem contextual</button>
+    <button class="navbtn" onclick="go('support',this)">7. Ações de apoio</button>
+    <button class="navbtn" onclick="go('feedback',this)">8. Feedback</button>
+    <button class="navbtn" onclick="go('watch',this)">9. Smartwatch</button>
+    <button class="navbtn" onclick="go('history',this)">10. Histórico</button>
+    <button class="navbtn" onclick="go('resources',this)">11. Recursos / CVV</button>
+    <div class="note"><b>Foco do projeto</b><br>Triagem estruturada e chat multiagente permanecem no centro. O smartwatch adiciona contexto. Em situações muito preocupantes, o fluxo de segurança prioriza ajuda humana e permite ligar para o CVV 188.</div>
+  </aside>
+
+  <main class="stage">
+    <div class="phone">
+      <div class="status"><span>15:41</span><span>●●●  Wi‑Fi  🔋</span></div>
+
+      <section id="welcome" class="screen active">
+        <div style="padding-top:35px">
+          <div class="logo" style="width:66px;height:66px;border-radius:22px">P</div>
+          <div class="eyebrow" style="margin-top:22px">Plataforma de apoio</div>
+          <h2>Entender, conversar e acompanhar</h2>
+          <p class="sub">Uma experiência que reúne triagem estruturada, conversa de apoio e acompanhamento contextual em um único aplicativo.</p>
+          <div class="card" style="margin-top:24px">
+            <h3>Antes de começar</h3>
+            <p class="sub">Este protótipo não realiza diagnóstico e não substitui avaliação ou atendimento profissional.</p>
+          </div>
+          <label class="option"><input type="checkbox" id="consent"><div><strong>Li e compreendi</strong><span>Concordo em continuar com esta demonstração.</span></div></label>
+          <button class="btn primary" onclick="startApp()">Continuar</button>
+          <div class="footerhint">Protótipo acadêmico • PIBIC</div>
+        </div>
+      </section>
+
+      <section id="account" class="screen">
+        <div class="eyebrow">Sua conta</div>
+        <h2>Como prefere usar o aplicativo?</h2>
+        <p class="sub">O cadastro permite que o sistema preserve histórico e personalize a conversa ao longo do tempo.</p>
+        <div class="card">
+          <h3>Criar cadastro</h3>
+          <label class="label">Como prefere ser chamado(a)?</label>
+          <input class="input" id="nameInput" placeholder="Ex.: Lucas">
+          <label class="label">E-mail</label>
+          <input class="input" id="emailInput" type="email" placeholder="voce@exemplo.com">
+          <label class="label">Senha</label>
+          <input class="input" id="passInput" type="password" placeholder="••••••••">
+          <button class="btn primary" onclick="createAccount()">Criar conta e continuar</button>
+        </div>
+        <button class="btn ghost" onclick="go('login')">Já tenho cadastro</button>
+        <p class="footerhint">No aplicativo real, autenticação e proteção de dados deverão seguir requisitos de segurança e LGPD.</p>
+      </section>
+
+      <section id="login" class="screen">
+        <div class="eyebrow">Entrar</div><h2>Que bom ter você de volta</h2>
+        <div class="card">
+          <label class="label">E-mail</label><input class="input" id="loginEmail" type="email" placeholder="voce@exemplo.com">
+          <label class="label">Senha</label><input class="input" type="password" placeholder="••••••••">
+          <button class="btn primary" onclick="loginDemo()">Entrar</button>
+        </div>
+        <button class="btn ghost" onclick="go('account')">Criar uma conta</button>
+      </section>
+
+      <section id="dass" class="screen">
+        <div class="top"><div><div class="eyebrow">Triagem</div><h2>DASS-21</h2></div><span class="badge">Instrumento</span></div>
+        <p class="sub">Responda pensando em quanto cada afirmação se aplicou a você durante a última semana.</p>
+        <div class="progress"><div id="dassProgress" style="width:4.76%"></div></div>
+        <div class="card"><div class="small" id="qCounter">Questão 1 de 21</div><h3 id="qText" style="margin-top:8px"></h3></div>
+        <div id="dassOptions"></div>
+        <button class="btn primary" onclick="nextDass()">Próxima</button>
+        <button class="btn ghost" onclick="prevDass()">Voltar</button>
+      </section>
+
+      <section id="dassDone" class="screen">
+        <div style="padding-top:40px;text-align:center"><div style="font-size:54px">✓</div><h2>Triagem registrada</h2>
+        <p class="sub">Suas respostas foram registradas para acompanhar suas aplicações da DASS-21. Este questionário não realiza diagnóstico.</p>
+        <button class="btn primary" onclick="go('home')">Ir para a Home</button></div>
+      </section>
+
+      <section id="home" class="screen">
+        <div class="top"><div><div class="eyebrow">Início</div><h2 id="homeGreeting">Olá 👋</h2><p class="sub">Como você está hoje?</p></div><span class="badge ok">● Online</span></div>
+        <div class="card hero"><h3>Converse comigo</h3><p class="sub">O chat integra segurança, memória, conteúdo, intervenção e encaminhamentos.</p><button class="btn ghost" onclick="go('chat')">Abrir chat</button></div>
+        <div class="card"><div class="metric"><div><div class="small">Triagem</div><div class="big">DASS-21</div></div><span>📝</span></div><button class="btn secondary" onclick="resetDass()">Fazer nova aplicação</button></div>
+        <div class="card"><div class="metric"><div><div class="small">Acompanhamento</div><div class="big">ZT Ultra2</div><span class="badge ok">● Conectado</span></div><div style="text-align:right"><div class="small">FC atual</div><div class="value">84 <span style="font-size:11px">bpm</span></div></div></div><button class="btn ghost" onclick="go('watch')">Ver acompanhamento</button></div>
+        <button class="btn secondary" onclick="go('context')">Registrar como estou me sentindo</button>
+        <div class="bottom">
+          <button class="tab active" onclick="go('home')"><b>⌂</b>Início</button>
+          <button class="tab" onclick="go('chat')"><b>💬</b>Chat</button>
+          <button class="tab" onclick="resetDass()"><b>📝</b>Triagem</button>
+          <button class="tab" onclick="go('history')"><b>◷</b>Histórico</button>
+        </div>
+      </section>
+
+      <section id="chat" class="screen">
+        <div class="top"><div><div class="eyebrow">Chat</div><h2 id="chatTitle">Apoio conversacional</h2></div><span class="badge">Multiagente</span></div>
+        <div class="chat" id="chatBox">
+          <div class="bubble bot" id="firstBot">Oi. Estou aqui para conversar com você. Como você está se sentindo agora?</div>
+          <div class="quick">
+            <button class="chip" onclick="chatQuick('Estou me sentindo ansioso')">Estou ansioso</button>
+            <button class="chip" onclick="chatQuick('Estou estressado')">Estou estressado</button>
+            <button class="chip" onclick="chatQuick('Quero conversar')">Quero conversar</button>
+            <button class="chip" onclick="go('safety')">Preciso de ajuda agora</button>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px"><input id="chatInput" class="input" placeholder="Escreva uma mensagem..."><button class="btn primary" onclick="sendChat()">Enviar</button></div>
+        <div class="bottom">
+          <button class="tab" onclick="go('home')"><b>⌂</b>Início</button>
+          <button class="tab active" onclick="go('chat')"><b>💬</b>Chat</button>
+          <button class="tab" onclick="resetDass()"><b>📝</b>Triagem</button>
+          <button class="tab" onclick="go('history')"><b>◷</b>Histórico</button>
+        </div>
+      </section>
+
+      <section id="context" class="screen">
+        <div class="eyebrow">Checagem contextual</div><h2>Percebemos uma alteração nos seus sinais</h2>
+        <p class="sub">Isso pode acontecer por vários motivos. O que melhor descreve o que está acontecendo agora?</p>
+        <div class="alertbox" style="margin-top:14px">❤️ FC acima do padrão recente • movimento baixo</div>
+        <div class="option" onclick="contextPick('atividade')"><div class="ico">🏃</div><div><strong>Estou praticando atividade física</strong><span>Exercício, corrida, treino ou esforço.</span></div></div>
+        <div class="option" onclick="contextPick('estresse')"><div class="ico">😰</div><div><strong>Estou em uma situação estressante</strong><span>Trabalho, estudo, discussão ou pressão.</span></div></div>
+        <div class="option" onclick="contextPick('ansiedade')"><div class="ico">😟</div><div><strong>Estou me sentindo ansioso(a)</strong><span>Sinto ansiedade ou desconforto emocional.</span></div></div>
+        <div class="option" onclick="contextPick('estimulante')"><div class="ico">☕</div><div><strong>Consumi café ou estimulante</strong><span>Café, energético ou similar.</span></div></div>
+        <div class="option" onclick="contextPick('repouso')"><div class="ico">🛋️</div><div><strong>Estou em repouso</strong><span>Estou sentado(a) ou parado(a).</span></div></div>
+        <div class="option" onclick="contextPick('naosei')"><div class="ico">❓</div><div><strong>Não sei o motivo</strong><span>Quero observar e conversar.</span></div></div>
+      </section>
+
+      <section id="contextOk" class="screen">
+        <div style="padding-top:42px;text-align:center"><div style="font-size:54px">✓</div><h2>Contexto registrado</h2><p class="sub">A alteração foi contextualizada. O sistema continua acompanhando sem concluir que se trata de ansiedade.</p><button class="btn primary" onclick="go('home')">Voltar ao início</button></div>
+      </section>
+
+      <section id="support" class="screen">
+        <div class="eyebrow">Apoio</div><h2>Vamos tentar algo para este momento</h2>
+        <p class="sub">Escolha uma ação de apoio. O chat pode acompanhar o processo.</p>
+        <div class="card support"><h3 id="supportGreeting">Estou com você.</h3><p class="sub">As opções deste protótipo representam conteúdos previamente selecionados; a IA não inventa intervenções de saúde mental.</p></div>
+        <div class="option" onclick="chooseSupport('Pausa e respiração guiada')"><div class="ico">🌬️</div><div><strong>Pausa e respiração guiada</strong><span>Reduzir o ritmo e observar a respiração.</span></div></div>
+        <div class="option" onclick="chooseSupport('Grounding')"><div class="ico">🖐️</div><div><strong>Técnica de grounding</strong><span>Trazer a atenção para o momento presente.</span></div></div>
+        <div class="option" onclick="go('chat')"><div class="ico">💬</div><div><strong>Conversar agora</strong><span>Continuar pelo chat de apoio.</span></div></div>
+        <div class="option" onclick="chooseSupport('Conversar com alguém de confiança')"><div class="ico">🤝</div><div><strong>Procurar alguém de confiança</strong><span>Buscar apoio de uma pessoa próxima.</span></div></div>
+        <button class="btn danger" onclick="go('safety')">Estou muito preocupado(a) / preciso de ajuda</button>
+      </section>
+
+      <section id="supportDoing" class="screen">
+        <div style="padding-top:36px;text-align:center"><div style="font-size:50px">⏱️</div><h2 id="supportTitle">Ação escolhida</h2><p class="sub">Faça a atividade no seu ritmo. Quando estiver pronto(a), registre como você está.</p><button class="btn primary" onclick="go('feedback')">Já posso dar um feedback</button></div>
+      </section>
+
+      <section id="feedback" class="screen">
+        <div class="eyebrow">Feedback</div><h2>Como você está agora?</h2><p class="sub">Esse retorno registra o que você fez e como se percebeu depois.</p>
+        <div class="option" onclick="feedbackPick('Muito mais tranquilo')"><div class="ico">😌</div><strong>Muito mais tranquilo</strong></div>
+        <div class="option" onclick="feedbackPick('Um pouco mais tranquilo')"><div class="ico">🙂</div><strong>Um pouco mais tranquilo</strong></div>
+        <div class="option" onclick="feedbackPick('Estou igual')"><div class="ico">😐</div><strong>Estou igual</strong></div>
+        <div class="option" onclick="feedbackPick('Estou mais ansioso')"><div class="ico">😟</div><strong>Estou mais ansioso</strong></div>
+        <div class="option" onclick="feedbackPick('Preciso de ajuda')"><div class="ico">🆘</div><strong>Preciso de ajuda</strong></div>
+        <div class="card"><label class="small">Intensidade agora: <b id="intensityLabel">4</b>/10</label><input class="slider" type="range" min="0" max="10" value="4" oninput="document.getElementById('intensityLabel').innerText=this.value"></div>
+      </section>
+
+      <section id="feedbackDone" class="screen">
+        <div style="padding-top:40px;text-align:center"><div style="font-size:54px">✓</div><h2>Feedback registrado</h2><p class="sub">O histórico poderá ajudar a lembrar quais estratégias você relatou como úteis em situações anteriores.</p><button class="btn primary" onclick="go('home')">Concluir</button></div>
+      </section>
+
+      <section id="watch" class="screen">
+        <div class="top"><div><div class="eyebrow">Acompanhamento</div><h2>ZT Ultra2</h2></div><span class="badge ok">● Conectado</span></div>
+        <div class="card hero"><div class="small" style="color:#f3eaff">Frequência cardíaca</div><div style="font-size:46px;font-weight:900;margin:6px 0">84 <span style="font-size:16px">bpm</span></div><p class="sub">Atualizado agora</p></div>
+        <div class="card"><h3>Contexto do dispositivo</h3><div class="metric"><span>🚶 Movimento</span><b>baixo</b></div><div class="divider"></div><div class="metric"><span>🌙 Sono</span><b>última noite</b></div><div class="divider"></div><div class="metric"><span>🩸 Pressão</span><b>reportada pelo dispositivo</b></div></div>
+        <div class="alertbox">O relógio não realiza diagnóstico. Os sinais são usados como contexto para o aplicativo.</div>
+        <button class="btn secondary" onclick="go('context')">Simular alteração de sinais</button>
+        <div class="bottom">
+          <button class="tab active" onclick="go('home')"><b>⌂</b>Início</button>
+          <button class="tab" onclick="go('chat')"><b>💬</b>Chat</button>
+          <button class="tab" onclick="resetDass()"><b>📝</b>Triagem</button>
+          <button class="tab" onclick="go('history')"><b>◷</b>Histórico</button>
+        </div>
+      </section>
+
+      <section id="history" class="screen">
+        <div class="eyebrow">Histórico</div><h2>Sua linha do tempo</h2><p class="sub">Triagens, autorrelatos e eventos contextuais em um único lugar.</p>
+        <div class="card"><h3>DASS-21</h3><div class="timeline"><div class="event"><div class="small">24/08/2026</div><b>Aplicação registrada</b><div class="small">21 respostas</div></div><div class="event"><div class="small">21/08/2026</div><b>Aplicação registrada</b><div class="small">Histórico preservado</div></div></div></div>
+        <div class="card"><h3>Eventos recentes</h3><div class="timeline"><div class="event"><div class="small">14:31</div><b>Alteração fisiológica</b><div class="small">FC acima do padrão • movimento baixo</div></div><div class="event"><div class="small">14:32</div><b>Autorrelato</b><div class="small">“Estou me sentindo ansioso” • 7/10</div></div><div class="event"><div class="small">14:33</div><b>Ação escolhida</b><div class="small">Grounding</div></div><div class="event"><div class="small">14:40</div><b>Feedback</b><div class="small">“Um pouco mais tranquilo” • 4/10</div></div></div></div>
+        <div class="bottom">
+          <button class="tab" onclick="go('home')"><b>⌂</b>Início</button>
+          <button class="tab" onclick="go('chat')"><b>💬</b>Chat</button>
+          <button class="tab" onclick="resetDass()"><b>📝</b>Triagem</button>
+          <button class="tab active" onclick="go('history')"><b>◷</b>Histórico</button>
+        </div>
+      </section>
+
+      <section id="resources" class="screen">
+        <div class="eyebrow">Recursos</div><h2>Ajuda e encaminhamento</h2>
+        <div class="card"><h3>Conversar</h3><p class="sub">Volte ao chat para relatar o que está acontecendo.</p><button class="btn primary" onclick="go('chat')">Abrir chat</button></div>
+        <div class="card"><h3>Rede de apoio</h3><p class="sub">Profissionais e locais de atendimento podem ser apresentados quando apropriado.</p><button class="btn secondary">Ver opções de atendimento</button></div>
+        <div class="card safety"><h3>Ajuda imediata</h3><p class="sub">Se a situação for muito preocupante, o fluxo de segurança prioriza contato humano e recursos de apoio.</p><a class="btn danger call" href="tel:188">📞 Ligar para o CVV — 188</a></div>
+      </section>
+
+      <section id="safety" class="screen">
+        <div class="eyebrow">Segurança</div><h2>Vamos priorizar sua segurança</h2>
+        <div class="card safety"><h3>Você não precisa lidar com este momento sozinho(a).</h3><p class="sub">Se houver risco imediato, procure um serviço de emergência da sua região. Para apoio emocional, você pode ligar para o CVV.</p></div>
+        <a class="btn danger call" href="tel:188">📞 Ligar agora para o CVV — 188</a>
+        <button class="btn secondary" onclick="go('chat')">Continuar no chat</button>
+        <button class="btn ghost" onclick="go('resources')">Ver outros recursos</button>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+const dassItems=["Achei difícil me acalmar", "Senti minha boca seca", "Não consegui vivenciar nenhum sentimento positivo", "Tive dificuldade em respirar em alguns momentos (ex. respiração ofegante, falta de ar, sem ter feito nenhum esforço físico)", "Achei difícil ter iniciativa para fazer as coisas", "Tive a tendência de reagir de forma exagerada às situações", "Senti tremores (ex. nas mãos)", "Senti que estava sempre nervoso", "Preocupei-me com situações em que eu pudesse entrar em pânico e parecesse ridículo (a)", "Senti que não tinha nada a desejar", "Senti-me agitado", "Achei difícil relaxar", "Senti-me depressivo (a) e sem ânimo", "Fui intolerante com as coisas que me impediam de continuar o que eu estava fazendo", "Senti que ia entrar em pânico", "Não consegui me entusiasmar com nada", "Senti que não tinha valor como pessoa", "Senti que estava um pouco emotivo/sensível demais", "Sabia que meu coração estava alterado mesmo não tendo feito nenhum esforço físico (ex. aumento da frequência cardíaca, disritmia cardíaca)", "Senti medo sem motivo", "Senti que a vida não tinha sentido"];
+let qIndex=0, answers=Array(21).fill(null);
+let userName=localStorage.getItem('pibic_name') || 'Você';
+
+function go(id,btn){
+ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
+ if(btn)btn.classList.add('active');
+ updatePersonalization();
+}
+function updatePersonalization(){
+ document.getElementById('homeGreeting').innerText=userName==='Você'?'Olá 👋':`Olá, ${userName} 👋`;
+ document.getElementById('chatTitle').innerText=userName==='Você'?'Apoio conversacional':`Conversa com ${userName}`;
+ document.getElementById('firstBot').innerText=userName==='Você'
+  ?'Oi. Estou aqui para conversar com você. Como você está se sentindo agora?'
+  :`Oi, ${userName}. Estou aqui com você. Como você está se sentindo agora?`;
+ document.getElementById('supportGreeting').innerText=userName==='Você'?'Estou com você.':`${userName}, estou com você.`;
+}
+function startApp(){
+ if(!document.getElementById('consent').checked){alert('Marque a opção de compreensão para continuar.');return;}
+ go('account');
+}
+function createAccount(){
+ const n=document.getElementById('nameInput').value.trim();
+ const e=document.getElementById('emailInput').value.trim();
+ if(!n||!e){alert('Preencha nome e e-mail para continuar.');return;}
+ userName=n; localStorage.setItem('pibic_name',n); localStorage.setItem('pibic_email',e); go('dass'); renderDass();
+}
+function loginDemo(){
+ const e=document.getElementById('loginEmail').value.trim();
+ if(!e){alert('Informe o e-mail para continuar.');return;}
+ userName=localStorage.getItem('pibic_name')||'Lucas'; go('home');
+}
+function renderDass(){
+ document.getElementById('qCounter').innerText=`Questão ${qIndex+1} de 21`;
+ document.getElementById('qText').innerText=dassItems[qIndex];
+ document.getElementById('dassProgress').style.width=`${((qIndex+1)/21)*100}%`;
+ const labels=['0 — Não se aplicou de maneira alguma','1 — Aplicou-se em algum grau, ou por pouco tempo','2 — Aplicou-se em um grau considerável, ou por uma boa parte do tempo','3 — Aplicou-se muito, ou na maioria do tempo'];
+ const box=document.getElementById('dassOptions'); box.innerHTML='';
+ labels.forEach((t,i)=>{const d=document.createElement('div'); d.className='dass-option'+(answers[qIndex]===i?' selected':''); d.innerText=t; d.onclick=()=>{answers[qIndex]=i;renderDass();}; box.appendChild(d);});
+}
+function nextDass(){if(answers[qIndex]===null){alert('Selecione uma resposta para continuar.');return;} if(qIndex<20){qIndex++;renderDass();}else go('dassDone');}
+function prevDass(){if(qIndex>0){qIndex--;renderDass();}else go('account');}
+function resetDass(){qIndex=0;answers=Array(21).fill(null);go('dass');renderDass();}
+
+function addBubble(txt,type){const d=document.createElement('div');d.className='bubble '+type;d.innerText=txt;document.getElementById('chatBox').appendChild(d);}
+function chatQuick(txt){
+ addBubble(txt,'user');
+ setTimeout(()=>{
+  const low=txt.toLowerCase();
+  if(low.includes('morrer')||low.includes('me matar')||low.includes('suic')){addBubble(`${userName}, quero priorizar sua segurança agora. Vou abrir as opções de ajuda imediata.`,'bot');setTimeout(()=>go('safety'),500);}
+  else if(low.includes('ansioso')||low.includes('estress')){addBubble(`${userName}, obrigado por me contar. Podemos primeiro entender o contexto e então escolher uma ação de apoio.`,'bot');const q=document.createElement('div');q.className='quick';q.innerHTML='<button class="chip" onclick="go(\'support\')">Quero apoio agora</button><button class="chip" onclick="go(\'context\')">Ver contexto</button>';document.getElementById('chatBox').appendChild(q);}
+  else addBubble(`${userName}, pode me contar o que está acontecendo no seu ritmo.`,'bot');
+ },350);
+}
+function sendChat(){const i=document.getElementById('chatInput');if(!i.value.trim())return;const t=i.value.trim();i.value='';chatQuick(t);}
+function contextPick(kind){if(['ansiedade','estresse','repouso','naosei'].includes(kind))go('support');else go('contextOk');}
+function chooseSupport(name){document.getElementById('supportTitle').innerText=name;go('supportDoing');}
+function feedbackPick(v){if(v==='Estou mais ansioso'||v==='Preciso de ajuda')go('resources');else go('feedbackDone');}
+
+renderDass(); updatePersonalization();
+</script>
+</body>
+</html>

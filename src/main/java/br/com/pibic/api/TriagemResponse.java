@@ -36,9 +36,8 @@ public class TriagemResponse {
         resposta.scoreEstresse = scoreEstresse;
 
         resposta.mensagemUsuario =
-                "Obrigado por responder. Suas respostas ajudam a plataforma "
-                + "a personalizar o apoio oferecido. Este questionario nao "
-                + "realiza diagnostico.";
+                "Obrigado por responder. Suas respostas foram registradas para acompanhar " +
+                "suas aplicacoes da DASS-21. Este questionario nao realiza diagnostico.";
 
         return resposta;
     }
