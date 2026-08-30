@@ -1,1 +1,23 @@
 echo target/ >> .gitignore
+target/
+
+# Maven
+target/
+*.class
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# OS
+Thumbs.db
+.DS_Store
