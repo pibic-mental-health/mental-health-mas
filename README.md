@@ -1,560 +1,605 @@
-# Sistema Multiagente de Triagem Emocional Inteligente
+# Mental Health MAS
 
-Este projeto é um protótipo acadêmico desenvolvido no contexto de pesquisa PIBIC, com o objetivo de demonstrar o uso de Sistemas Multiagentes e Inteligência Artificial Generativa em um fluxo de apoio inicial à triagem emocional.
+Sistema Multiagente de apoio inicial à saúde mental desenvolvido como projeto acadêmico de Iniciação Científica (PIBIC).
 
-A proposta não realiza diagnóstico, tratamento ou acompanhamento psicológico real. O sistema atua apenas como uma prova de conceito para organização de informações, identificação inicial de perfil emocional simulado e encaminhamento demonstrativo para conteúdos educativos, profissionais cadastrados, locais de atendimento e relatórios simulados.
+O projeto investiga o uso de **Sistemas Multiagentes**, **Inteligência Artificial Generativa**, instrumentos estruturados de triagem, persistência de dados e integração com fontes externas para construir uma plataforma de apoio inicial e encaminhamento responsável.
 
----
-
-## Objetivo do Projeto
-
-O objetivo principal é desenvolver uma arquitetura multiagente capaz de simular um fluxo de triagem emocional inicial, utilizando agentes especializados para:
-
-- coletar informações iniciais do usuário;
-- calcular um perfil emocional com base em respostas simuladas;
-- analisar nível de risco textual;
-- gerar resposta empática com apoio de IA generativa;
-- sugerir conteúdos educativos baseados em evidências cadastradas;
-- indicar profissionais simulados;
-- apresentar locais demonstrativos de atendimento;
-- gerar uma simulação de acompanhamento semanal;
-- produzir um relatório final demonstrativo.
+> **Aviso:** este sistema possui finalidade acadêmica e experimental. Não realiza diagnóstico médico ou psicológico, não substitui profissionais de saúde e não deve ser utilizado como serviço de emergência.
 
 ---
 
-## Aviso Ético
+## Visão Geral
 
-Este sistema possui finalidade acadêmica e demonstrativa.
+A solução utiliza uma arquitetura baseada em agentes especializados implementados com o framework **JADE (Java Agent DEvelopment Framework)**.
 
-Ele não substitui:
+Cada agente possui responsabilidades específicas dentro do fluxo, incluindo:
 
-- psicólogos;
-- psiquiatras;
-- profissionais de saúde;
-- serviços de emergência;
-- avaliação clínica;
-- acompanhamento terapêutico.
+- interação conversacional;
+- aplicação e processamento da DASS-21;
+- análise contextual de segurança;
+- memória e persistência;
+- geração de respostas com IA;
+- recomendação de conteúdos;
+- busca por locais de atendimento;
+- monitoramento experimental;
+- geração de relatórios.
 
-Qualquer uso real envolvendo pessoas, dados sensíveis, testes com participantes, entrevistas ou monitoramento emocional exigiria aprovação de Comitê de Ética, consentimento informado e supervisão profissional adequada.
-
----
-
-## Tecnologias Utilizadas
-
-- Java
-- Maven
-- JADE 4.6.0
-- Gson
-- API de IA Generativa via camada `ClienteLLM`
-- NVIDIA NIM como provedor atual de IA
-- Arquivos JSON como bases locais do protótipo
+A comunicação entre esses componentes permite separar responsabilidades e experimentar diferentes estratégias de cooperação entre agentes.
 
 ---
 
-## Estrutura do Projeto
+## Principais Funcionalidades
+
+Atualmente, o backend possui:
+
+- arquitetura multiagente com JADE;
+- API HTTP para comunicação com aplicações externas;
+- chatbot integrado à IA generativa;
+- integração com NVIDIA NIM;
+- instrumento DASS-21;
+- histórico das aplicações da DASS-21;
+- persistência de conversas;
+- persistência em PostgreSQL;
+- memória contextual;
+- análise contextual de segurança;
+- classificação operacional de risco;
+- recomendações de conteúdos cadastrados;
+- integração com fontes de locais de atendimento;
+- consultas ao CNES;
+- consultas ao OpenStreetMap por meio da Overpass API;
+- integração opcional com Google Places;
+- mecanismos de fallback em falhas de serviços externos;
+- agente de monitoramento experimental;
+- agente de relatório experimental.
+
+---
+
+## Arquitetura
+
+De forma simplificada, a plataforma possui o seguinte fluxo:
 
 ```text
-mental-health-mas
-├── lib
-│   └── jade.jar
-├── src
-│   └── main
-│       ├── java
-│       │   └── br
-│       │       └── com
-│       │           └── pibic
-│       │               ├── agentes
-│       │               │   ├── AgentePaciente.java
-│       │               │   ├── AgenteTriagemFormulario.java
-│       │               │   ├── AgenteConversacional.java
-│       │               │   ├── AgenteSeguranca.java
-│       │               │   ├── AgenteMemoria.java
-│       │               │   ├── AgenteConteudo.java
-│       │               │   ├── AgentePsicologo.java
-│       │               │   ├── AgenteLocalAtendimento.java
-│       │               │   ├── AgenteMonitoramento.java
-│       │               │   ├── AgenteRelatorio.java
-│       │               │   ├── ClienteLLM.java
-│       │               │   ├── ClienteNvidia.java
-│       │               │   └── ClienteDeepSeek.java
-│       │               └── utils
-│       │                   └── JsonLoader.java
-│       └── resources
+Aplicativo / Cliente
+        │
+        ▼
+AgenteGateway
+        │
+        ├──────────────► AgenteTriagemFormulario
+        │
+        └──────────────► AgenteConversacional
+                              │
+                              ├──► AgenteSeguranca
+                              │
+                              ├──► AgenteMemoria
+                              │
+                              ├──► ClienteLLM
+                              │       └──► NVIDIA NIM
+                              │
+                              ├──► AgenteConteudo
+                              │
+                              ├──► AgenteLocalAtendimento
+                              │       ├──► CNES
+                              │       ├──► OpenStreetMap / Overpass
+                              │       └──► Google Places (opcional)
+                              │
+                              ├──► AgenteMonitoramento
+                              │
+                              └──► AgenteRelatorio
+```
+
+O projeto também mantém agentes utilizados em fluxos de simulação e experimentação acadêmica.
+
+---
+
+## Agentes
+
+### AgenteGateway
+
+Responsável pela integração entre o sistema multiagente e clientes externos.
+
+O agente inicia uma API HTTP que permite operações relacionadas a:
+
+- verificação de disponibilidade da API;
+- chat;
+- histórico de conversas;
+- formulário DASS-21;
+- envio de triagem;
+- histórico da DASS-21;
+- busca por locais de atendimento.
+
+A porta pode ser configurada pela variável:
+
+```text
+PIBIC_API_PORT
+```
+
+### AgenteConversacional
+
+Responsável pela orquestração do fluxo de conversa.
+
+Entre suas funções estão:
+
+- receber mensagens;
+- consultar o agente de segurança;
+- recuperar contexto da memória;
+- preparar contexto para a IA;
+- solicitar respostas ao `ClienteLLM`;
+- processar respostas da IA;
+- acionar funcionalidades auxiliares;
+- oferecer ações relevantes ao usuário.
+
+### AgenteSeguranca
+
+Analisa o conteúdo da conversa antes que o fluxo conversacional prossiga normalmente.
+
+Os estados operacionais utilizados pelo sistema são:
+
+```text
+BAIXO_RISCO
+ATENCAO
+RISCO
+```
+
+Essas categorias representam **estados internos do software** e não classificações ou diagnósticos clínicos.
+
+Dependendo do resultado, o sistema pode priorizar mensagens de segurança e orientação para busca de apoio adequado.
+
+### AgenteTriagemFormulario
+
+Responsável pelo processamento do instrumento estruturado de triagem utilizado pela plataforma.
+
+A versão atual utiliza a **DASS-21 (Depression, Anxiety and Stress Scale – 21 itens)**.
+
+O sistema:
+
+- disponibiliza o formulário;
+- recebe as respostas;
+- calcula os resultados;
+- registra a aplicação;
+- permite consultar o histórico das aplicações.
+
+Os resultados são utilizados como informação de apoio ao funcionamento da plataforma e não constituem diagnóstico.
+
+### AgenteMemoria
+
+Mantém informações relevantes para continuidade das interações.
+
+A implementação possui suporte à persistência por PostgreSQL.
+
+Entre os dados persistidos estão:
+
+- histórico de mensagens;
+- registros de conversas;
+- resultados de triagens;
+- informações necessárias para recuperação de contexto.
+
+A camada de memória possui abstrações próprias de repositório, permitindo separar a lógica dos agentes do mecanismo de persistência.
+
+### AgenteConteudo
+
+Responsável pela seleção de conteúdos cadastrados na plataforma.
+
+Os recursos utilizados ficam em:
+
+```text
+src/main/resources/
+```
+
+Incluindo bases estruturadas utilizadas pelo protótipo para recomendações e informações de apoio.
+
+A proposta é priorizar conteúdos previamente cadastrados e associados a fontes identificáveis, em vez de permitir que a IA gere livremente recomendações dessa natureza.
+
+### AgenteLocalAtendimento
+
+Responsável pela busca de locais relacionados ao atendimento em saúde.
+
+A implementação atual pode utilizar diferentes fontes:
+
+- CNES;
+- OpenStreetMap;
+- Overpass API;
+- Google Places, quando configurado;
+- bases locais utilizadas como fallback.
+
+A disponibilidade e qualidade dos resultados dependem dos serviços externos utilizados.
+
+### AgenteMonitoramento
+
+Implementa o fluxo experimental de monitoramento periódico.
+
+Atualmente esse módulo ainda possui componentes simulados e deve ser considerado parte experimental do protótipo.
+
+Uma evolução futura prevista é a integração com dados de dispositivos vestíveis, como informações relacionadas a:
+
+- sono;
+- atividade;
+- frequência cardíaca;
+- variabilidade da frequência cardíaca.
+
+Esse tipo de integração deverá ser investigado como fonte complementar de dados, e não como mecanismo determinístico de previsão clínica.
+
+### AgenteRelatorio
+
+Processa informações provenientes do fluxo de monitoramento e produz uma representação resumida dos dados.
+
+Assim como o monitoramento, este módulo ainda possui componentes experimentais e simulados.
+
+### AgentePaciente
+
+Utilizado principalmente para simulações automatizadas do comportamento de um usuário durante o desenvolvimento.
+
+Ele permite testar fluxos entre os agentes sem depender da aplicação cliente.
+
+O agente pode ser configurado por variáveis de ambiente específicas para cenários de teste.
+
+### AgentePsicologo
+
+Componente experimental responsável por trabalhar com registros de profissionais cadastrados nas bases locais do protótipo.
+
+Os dados existentes nessa camada devem ser tratados como dados de demonstração enquanto não houver uma integração oficial e processo de validação apropriado.
+
+---
+
+## Inteligência Artificial
+
+A integração com modelos de linguagem é abstraída pela classe:
+
+```text
+ClienteLLM
+```
+
+O provedor atualmente utilizado é:
+
+```text
+NVIDIA NIM
+```
+
+A implementação específica encontra-se em:
+
+```text
+ClienteNvidia.java
+```
+
+A chave da API nunca deve ser armazenada diretamente no código-fonte.
+
+Ela deve ser fornecida pela variável:
+
+```text
+NVIDIA_API_KEY
+```
+
+O modelo pode ser configurado com:
+
+```text
+NVIDIA_MODEL
+```
+
+Caso essa variável não seja definida, o cliente utiliza o modelo padrão configurado na implementação.
+
+O provedor é selecionado por:
+
+```text
+LLM_PROVIDER
+```
+
+Exemplo:
+
+```text
+LLM_PROVIDER=NVIDIA_NIM
+```
+
+---
+
+## Persistência
+
+A persistência utiliza PostgreSQL por meio de JDBC.
+
+As configurações são fornecidas pelas seguintes variáveis de ambiente:
+
+```text
+PIBIC_DB_URL
+PIBIC_DB_USER
+PIBIC_DB_PASSWORD
+```
+
+Exemplo:
+
+```text
+PIBIC_DB_URL=jdbc:postgresql://localhost:5432/mental_health_mas
+PIBIC_DB_USER=postgres
+PIBIC_DB_PASSWORD=<senha>
+```
+
+Credenciais reais não devem ser adicionadas ao repositório.
+
+---
+
+## Variáveis de Ambiente
+
+O repositório possui:
+
+```text
+.env.example
+```
+
+com as configurações utilizadas pelo backend.
+
+| Variável | Finalidade |
+|---|---|
+| `PIBIC_API_PORT` | Porta da API HTTP |
+| `PIBIC_DB_URL` | URL JDBC do PostgreSQL |
+| `PIBIC_DB_USER` | Usuário do banco |
+| `PIBIC_DB_PASSWORD` | Senha do banco |
+| `LLM_PROVIDER` | Provedor de modelo de linguagem |
+| `NVIDIA_API_KEY` | Credencial da NVIDIA |
+| `NVIDIA_MODEL` | Modelo NVIDIA utilizado |
+| `GOOGLE_PLACES_API_KEY` | Integração opcional com Google Places |
+| `SAUDE_API_TOKEN` | Token opcional para serviço de dados de saúde |
+| `PACIENTE_IA_ENABLED` | Habilita recursos experimentais do AgentePaciente |
+| `CENARIO_PACIENTE` | Define cenário de simulação |
+
+> O Java utiliza `System.getenv()`. Portanto, o arquivo `.env` não é carregado automaticamente pelo backend.
+
+No PowerShell, por exemplo:
+
+```powershell
+$env:LLM_PROVIDER="NVIDIA_NIM"
+$env:NVIDIA_API_KEY="SUA_CHAVE"
+```
+
+---
+
+## Estrutura do Backend
+
+```text
+mental-health-mas/
+│
+├── src/
+│   └── main/
+│       ├── java/
+│       │   └── br/com/pibic/
+│       │       ├── agentes/
+│       │       ├── api/
+│       │       ├── memoria/
+│       │       ├── triagem/
+│       │       └── utils/
+│       │
+│       └── resources/
+│           ├── conteudos.json
 │           ├── conteudos_evidencias.json
+│           ├── locais_atendimento.json
 │           ├── psicologos.json
-│           └── locais_atendimento.json
+│           └── saude_mental_oficial.json
+│
+├── docs/
+│   └── legacy/
+│       ├── project-history/
+│       ├── research/
+│       └── README_legacy_main.md
+│
+├── .env.example
+├── .gitignore
 ├── pom.xml
 └── README.md
 ```
 
----
+Arquivos gerados pelo Maven, como `target/`, não são versionados.
 
-## Arquitetura Multiagente
-
-O sistema é composto por agentes especializados, cada um responsável por uma etapa do fluxo.
-
-### AgentePaciente
-
-Simula a interação inicial de um usuário com a plataforma.
-
-Responsabilidades:
-
-- enviar formulário inicial;
-- receber perfil da triagem;
-- enviar mensagem ao chat;
-- responder aos convites do sistema;
-- receber conteúdos, psicólogos, locais de atendimento e relatório simulado.
+O JADE também não é armazenado como `jade.jar` dentro do projeto. A dependência é obtida pelo Maven.
 
 ---
 
-### AgenteTriagemFormulario
-
-Responsável por processar as respostas do formulário inicial.
-
-Ele calcula dois escores principais:
-
-- ansiedade;
-- depressão.
-
-Com base nesses escores, define um perfil:
-
-- `ANSIEDADE`;
-- `DEPRESSAO`;
-- `MISTO`;
-- `GERAL`.
-
-Este perfil é apenas uma classificação demonstrativa do protótipo, não sendo diagnóstico clínico.
-
----
-
-### AgenteConversacional
-
-É o agente central de orquestração da conversa.
-
-Responsabilidades:
-
-- receber mensagem do paciente;
-- consultar o agente de segurança;
-- consultar a memória;
-- montar o prompt para a IA;
-- chamar a camada `ClienteLLM`;
-- gerar resposta empática;
-- oferecer conteúdos educativos;
-- oferecer indicações de psicólogos;
-- oferecer locais demonstrativos de atendimento;
-- iniciar simulação de acompanhamento;
-- receber relatório simulado.
-
----
-
-### AgenteSeguranca
-
-Analisa a mensagem textual do usuário e classifica o nível de risco.
-
-Possíveis classificações:
-
-- `BAIXO_RISCO`;
-- `ATENCAO`;
-- `RISCO`.
-
-Em caso de risco, o sistema evita seguir o fluxo normal e retorna uma mensagem de segurança, orientando a busca imediata por ajuda profissional, serviço de emergência ou pessoa de confiança.
-
----
-
-### AgenteMemoria
-
-Armazena informações relevantes durante a execução do protótipo.
-
-Dados armazenados:
-
-- nome;
-- perfil;
-- risco;
-- histórico de mensagens;
-- resposta da IA;
-- preferência por conteúdo;
-- preferência por psicólogo;
-- preferência por locais de atendimento;
-- status do monitoramento simulado;
-- status do relatório simulado.
-
----
-
-### AgenteConteudo
-
-Responsável por sugerir conteúdos educativos com base no perfil identificado.
-
-A base utilizada é:
-
-```text
-conteudos_evidencias.json
-```
-
-Ela contém sugestões como:
-
-- mindfulness;
-- respiração guiada;
-- caminhada leve;
-- música;
-- práticas educativas de autocuidado.
-
-Cada conteúdo possui:
-
-- perfil relacionado;
-- tipo;
-- título;
-- descrição;
-- nível de evidência;
-- fonte;
-- observação ética.
-
----
-
-### AgentePsicologo
-
-Responsável por retornar indicações simuladas de psicólogos cadastrados.
-
-A base utilizada é:
-
-```text
-psicologos.json
-```
-
-Nesta versão, os registros são demonstrativos e não representam uma base oficial.
-
-Em uma aplicação real, seria necessário validar profissionais, permissões, regulamentação, disponibilidade e consentimento.
-
----
-
-### AgenteLocalAtendimento
-
-Responsável por retornar locais demonstrativos de atendimento, como:
-
-- CAPS;
-- UBS;
-- ambulatórios;
-- serviços públicos de saúde mental.
-
-A base utilizada é:
-
-```text
-locais_atendimento.json
-```
-
-Nesta versão, os dados são simulados ou curados manualmente para demonstração acadêmica.
-
-Em uma evolução futura, o agente pode ser integrado a bases oficiais, como CNES ou Dados Abertos SUS.
-
----
-
-### AgenteMonitoramento
-
-Gera uma simulação de acompanhamento semanal.
-
-Os dados gerados são artificiais e representam indicadores como:
-
-- ansiedade;
-- humor;
-- energia;
-- sono.
-
-Esta etapa não representa acompanhamento psicológico real.
-
----
-
-### AgenteRelatorio
-
-Recebe os dados simulados do monitoramento e gera um relatório semanal demonstrativo.
-
-O relatório informa:
-
-- perfil usado na simulação;
-- médias simuladas dos indicadores;
-- observação geral;
-- limitação ética.
-
-O relatório reforça que não se trata de avaliação clínica, diagnóstico ou acompanhamento profissional.
-
----
-
-## Fluxo de Execução
-
-O fluxo principal do sistema é:
-
-```text
-AgentePaciente
-→ AgenteTriagemFormulario
-→ AgenteConversacional
-→ AgenteSeguranca
-→ AgenteMemoria
-→ ClienteLLM
-→ AgenteConteudo
-→ AgentePsicologo
-→ AgenteLocalAtendimento
-→ AgenteMonitoramento
-→ AgenteRelatorio
-→ AgenteConversacional
-→ AgentePaciente
-→ AgenteMemoria
-```
-
----
-
-## Exemplo de Fluxo Simulado
-
-O paciente envia o formulário:
-
-```text
-nome=Maria;
-preocupacao=4;
-nervosismo=4;
-relaxamento=3;
-sono=2;
-tristeza=2;
-energia=1;
-interesse=1;
-isolamento=2;
-```
-
-O agente de triagem calcula:
-
-```text
-Score Ansiedade: 13
-Score Depressao: 10
-Perfil identificado: MISTO
-```
-
-Depois, o paciente envia a mensagem:
-
-```text
-Hoje estou muito preocupado e com dificuldade para relaxar.
-```
-
-O sistema então:
-
-1. identifica baixo risco;
-2. consulta a memória;
-3. gera resposta empática com IA;
-4. oferece conteúdos educativos;
-5. oferece psicólogos simulados;
-6. oferece locais de atendimento;
-7. inicia simulação de acompanhamento;
-8. gera relatório final.
-
----
-
-## Integração com IA Generativa
-
-A integração com IA é feita por meio da classe:
-
-```text
-ClienteLLM.java
-```
-
-Essa classe funciona como uma camada de abstração para permitir a troca futura de provedores.
-
-Atualmente, o provedor utilizado é:
-
-```text
-NVIDIA_NIM
-```
-
-A chamada é feita no `AgenteConversacional`:
-
-```java
-resposta = ClienteLLM.gerarResposta(prompt);
-```
-
-Caso a IA falhe ou retorne erro, o sistema utiliza respostas de fallback previamente definidas.
-
----
-
-## Estratégia de Prompt
-
-O prompt enviado à IA contém regras obrigatórias, como:
-
-```text
-- Seja acolhedor, breve e humano.
-- Não afirme diagnósticos.
-- Não diga que está tratando o usuário.
-- Não prometa acompanhamento clínico.
-- Reforce que a plataforma não substitui psicólogo.
-- Incentive a busca por apoio profissional quando fizer sentido.
-```
-
-Essa estratégia ajuda a manter a resposta dentro dos limites éticos do projeto.
-
----
-
-## Bases JSON
-
-### conteudos_evidencias.json
-
-Contém conteúdos educativos baseados em evidências cadastradas.
-
-Exemplo de campos:
-
-```json
-{
-  "perfil": "ANSIEDADE",
-  "tipo": "meditacao",
-  "titulo": "Prática breve de mindfulness",
-  "descricao": "Exercício educativo de atenção plena para observar a respiração.",
-  "nivelEvidencia": "revisao_sistematica",
-  "fonte": "Goyal et al., 2014",
-  "referencia": "Meditation Programs for Psychological Stress and Well-being",
-  "observacao": "Uso educativo. Não substitui avaliação profissional."
-}
-```
-
----
-
-### psicologos.json
-
-Contém registros simulados de psicólogos.
-
-Exemplo:
-
-```json
-{
-  "nome": "Dra. Juliana Lima",
-  "especialidade": "Ansiedade e Depressao",
-  "modalidade": "online",
-  "contato": "juliana.lima@email.com"
-}
-```
-
----
-
-### locais_atendimento.json
-
-Contém registros demonstrativos de locais de atendimento.
-
-Exemplo:
-
-```json
-{
-  "nome": "CAPS II Brasília",
-  "tipo": "CAPS",
-  "descricao": "Centro de Atenção Psicossocial voltado ao atendimento de pessoas em sofrimento psíquico.",
-  "cidade": "Brasilia",
-  "uf": "DF",
-  "endereco": "Endereço demonstrativo",
-  "telefone": "Contato demonstrativo",
-  "fonte": "Base simulada do projeto",
-  "observacao": "Registro demonstrativo. Em uso real, os dados devem ser validados em fontes oficiais."
-}
-```
+## Dependências Principais
+
+O projeto utiliza:
+
+- Java 8;
+- Maven;
+- JADE 4.6.0;
+- Gson;
+- PostgreSQL JDBC;
+- NVIDIA NIM;
+- APIs HTTP externas.
+
+O JADE é carregado pelo repositório Maven oficial configurado no `pom.xml`.
 
 ---
 
 ## Como Executar
 
-Na raiz do projeto, execute:
+### 1. Clonar o repositório
+
+```bash
+git clone <URL_DO_REPOSITORIO>
+cd mental-health-mas
+```
+
+### 2. Compilar
 
 ```bash
 mvn clean compile
 ```
 
-Depois:
+O resultado esperado é:
+
+```text
+BUILD SUCCESS
+```
+
+### 3. Modo de simulação
+
+O modo padrão inicia os agentes configurados para simulação, incluindo o `AgentePaciente`.
 
 ```bash
 mvn exec:java
 ```
 
----
+### 4. Modo API
 
-## Resultado Esperado
+Para iniciar a plataforma com o `AgenteGateway` e sem o simulador automático do paciente:
 
-Durante a execução, o terminal deve exibir mensagens como:
-
-```text
-Agente Paciente iniciado
-Agente Triagem Formulario iniciado
-Agente Conversacional iniciado
-Agente Seguranca iniciado
-Agente Memoria iniciado
-Agente Conteudo iniciado
-Agente Psicologo iniciado
-Agente Local Atendimento iniciado
-Agente Monitoramento Simulado iniciado
-Agente Relatorio Simulado iniciado
+```bash
+mvn -Papi exec:java
 ```
 
-Também deve aparecer o fluxo completo:
-
-```text
-[PACIENTE] Respondendo formulario
-[TRIAGEM] Perfil identificado: MISTO
-[CONVERSACIONAL] Nivel de risco: BAIXO_RISCO
-[CONTEUDO] Requisicao recebida
-[PSICOLOGO] Requisicao recebida
-[LOCAL_ATENDIMENTO] Requisicao recebida
-[MONITORAMENTO SIMULADO] Dados simulados enviados
-[RELATORIO SIMULADO GERADO]
-[PACIENTE] Relatorio simulado recebido
-```
+O perfil `api` é definido no `pom.xml`.
 
 ---
 
-## Estado Atual do Protótipo
+## Recursos Externos
 
-Atualmente, o sistema já possui:
+### NVIDIA NIM
 
-- triagem por formulário;
-- cálculo de perfil emocional;
-- memória de contexto;
-- análise de risco textual;
-- resposta conversacional com IA generativa;
-- fallback em caso de erro da IA;
-- sugestões educativas baseadas em evidências;
-- indicações simuladas de psicólogos;
-- locais demonstrativos de atendimento;
-- monitoramento semanal simulado;
-- relatório simulado;
-- registro das preferências na memória.
+Utilizado como provedor atual de modelos de linguagem para a camada conversacional.
+
+### PostgreSQL
+
+Utilizado para persistência de memória, conversas e registros da triagem.
+
+### CNES
+
+Fonte utilizada pelo módulo de locais de atendimento para consulta de estabelecimentos de saúde.
+
+### OpenStreetMap / Overpass
+
+Utilizado como outra fonte para localização de serviços e estabelecimentos.
+
+### Google Places
+
+Integração opcional utilizada quando:
+
+```text
+GOOGLE_PLACES_API_KEY
+```
+
+está configurada.
+
+---
+
+## Aplicativo
+
+O sistema possui também uma aplicação Android desenvolvida em Kotlin com Jetpack Compose para interação com o backend.
+
+O aplicativo é tratado separadamente do backend e deverá ser mantido em um repositório próprio.
+
+Estrutura planejada:
+
+```text
+mental-health-mas     → backend multiagente
+mental-health-app     → aplicação Android
+mental-health-docs    → documentação MkDocs
+```
+
+---
+
+## Documentação
+
+Documentos produzidos durante diferentes etapas do desenvolvimento foram preservados em:
+
+```text
+docs/legacy/
+```
+
+Esse conteúdo representa o histórico do projeto e pode conter decisões ou estruturas de versões anteriores.
+
+A documentação técnica atual deverá ser mantida separadamente em um projeto baseado em MkDocs.
+
+---
+
+## Estado Atual
+
+Nesta versão, estão funcionais ou implementados:
+
+- sistema multiagente JADE;
+- API HTTP;
+- integração com aplicativo;
+- DASS-21;
+- histórico de triagem;
+- histórico de conversas;
+- persistência PostgreSQL;
+- IA generativa via NVIDIA NIM;
+- análise contextual de segurança;
+- memória;
+- conteúdos cadastrados;
+- consulta de locais de atendimento;
+- integração CNES;
+- integração OpenStreetMap/Overpass;
+- Google Places opcional.
+
+Os módulos de monitoramento e relatório ainda possuem partes simuladas e permanecem como áreas de evolução do projeto.
 
 ---
 
 ## Limitações
 
-O sistema ainda possui limitações importantes:
+Entre as limitações atuais estão:
 
-- não realiza diagnóstico;
-- não realiza tratamento;
-- não realiza acompanhamento real;
-- não substitui profissionais de saúde;
-- utiliza dados simulados;
-- utiliza bases locais manuais;
-- ainda não usa banco de dados;
-- ainda não possui interface gráfica;
-- ainda não possui autenticação;
-- ainda não possui integração oficial com serviços públicos;
-- ainda não utiliza `MessageTemplate` para filtrar respostas entre agentes.
+- ausência de validação clínica do sistema;
+- ausência de avaliação clínica com usuários;
+- módulos de monitoramento ainda experimentais;
+- módulo de relatório parcialmente simulado;
+- dependência de serviços externos para algumas funcionalidades;
+- necessidade de maior cobertura de testes automatizados;
+- necessidade de validação formal antes de qualquer aplicação fora do contexto acadêmico.
 
 ---
 
-## Próximos Passos
+## Roadmap
 
-Possíveis evoluções do projeto:
+Entre as evoluções previstas estão:
 
-1. Melhorar a comunicação entre agentes com `conversationId` e `MessageTemplate`.
-2. Criar interface web para interação com usuário.
-3. Integrar banco de dados para persistência.
-4. Criar painel de visualização para relatórios simulados.
-5. Integrar o agente de locais com bases oficiais, como CNES ou Dados Abertos SUS.
-6. Melhorar o módulo de segurança textual.
-7. Criar testes automatizados.
-8. Documentar os fluxos com diagramas.
-9. Submeter qualquer teste real ao Comitê de Ética.
-10. Validar o sistema com profissionais da área antes de qualquer uso real.
+1. ampliar os testes automatizados;
+2. evoluir os agentes de monitoramento e relatório;
+3. melhorar mecanismos de correlação e contexto entre mensagens dos agentes;
+4. ampliar a documentação técnica;
+5. manter aplicação Android e backend em repositórios independentes;
+6. publicar documentação utilizando MkDocs;
+7. melhorar observabilidade e tratamento de erros;
+8. estudar integração com dispositivos vestíveis;
+9. explorar dados de sono, atividade e sinais fisiológicos como informações complementares;
+10. realizar processos adequados de avaliação ética e validação antes de qualquer estudo envolvendo participantes.
+
+---
+
+## Segurança e Privacidade
+
+Nenhuma chave de API ou senha deve ser adicionada ao repositório.
+
+Arquivos locais de configuração são ignorados pelo Git:
+
+```text
+.env
+.env.*
+```
+
+Somente o arquivo seguro de referência é versionado:
+
+```text
+.env.example
+```
+
+Caso alguma credencial seja exposta acidentalmente, ela deve ser revogada imediatamente e removida também do histórico Git.
+
+---
+
+## Contexto Acadêmico
+
+Este projeto foi desenvolvido no contexto de pesquisa de Iniciação Científica da Universidade de Brasília, envolvendo investigação sobre:
+
+- Sistemas Multiagentes;
+- agentes inteligentes;
+- interação humano-IA;
+- IA generativa;
+- triagem estruturada;
+- segurança em sistemas conversacionais;
+- saúde mental digital.
 
 ---
 
 ## Considerações Finais
 
-Este projeto demonstra como uma arquitetura multiagente pode ser utilizada para organizar um fluxo de apoio inicial à triagem emocional, combinando agentes especializados, bases locais estruturadas e IA generativa.
+O projeto busca investigar como uma arquitetura composta por agentes especializados pode organizar diferentes responsabilidades de uma plataforma de apoio inicial à saúde mental.
 
-A principal contribuição do protótipo está na separação de responsabilidades entre os agentes e na preocupação com limites éticos, deixando claro que o sistema é apenas acadêmico, demonstrativo e não clínico.
+A solução combina comunicação entre agentes, triagem estruturada, memória persistente, modelos de linguagem e fontes externas de informação.
 
-O sistema pode servir como base para estudos futuros envolvendo Sistemas Multiagentes, Inteligência Artificial Generativa, apoio à decisão, triagem inicial e encaminhamento responsável.
+O sistema permanece um **protótipo acadêmico e experimental**. Seus resultados não constituem diagnóstico, prescrição, tratamento ou avaliação clínica.
